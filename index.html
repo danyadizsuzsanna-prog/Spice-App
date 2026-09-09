@@ -369,15 +369,12 @@
   const SUPABASE_ANON_KEY = "sb_publishable_Nf-XecuiQns2q7Olnu_VIw_kA78NBZS";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  window.onload = async () => {
+ window.onload = async () => {
   try {
-    // Ha a bejelentkezésből tért vissza a felhasználó, nem indítunk új bejelentkezést
-    if (window.location.hash.includes('access_token')) {
-      return;
-    }
-
+    // A Supabase automatikusan kiolvassa a hash-ből a sessiont
     const { data: { session } } = await supabaseClient.auth.getSession();
 
+    // Ha nincs bejelentkezve, elindítjuk az OAuth folyamatot
     if (!session) {
       await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
@@ -387,33 +384,30 @@
       });
       return;
     }
-  } catch (err) {
-    console.error(err);
+
+    // Ha van session, lekérjük a felhasználó adatait
+    const userEmail = session.user.email.toLowerCase().trim();
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('nev')
+      .ilike('email', userEmail)
+      .maybeSingle();
+
+    const name = profile?.nev || userEmail;
+    document.getElementById('userName').innerText = name;
+    
+    // Kezdőbetű generálása az avatárba
+    const initial = name.charAt(0).toUpperCase();
+    document.getElementById('avatarInitial').innerText = initial;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+  } catch (e) {
+    console.error("Hiba a belépésnél:", e);
   }
 };
-
-      const userEmail = session.user.email.toLowerCase().trim();
-
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('nev')
-        .ilike('email', userEmail)
-        .maybeSingle();
-
-      const name = profile?.nev || userEmail;
-      document.getElementById('userName').innerText = name;
-      
-      // Kezdőbetű generálása az avatárba
-      const initial = name.charAt(0).toUpperCase();
-      document.getElementById('avatarInitial').innerText = initial;
-
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('content').style.display = 'block';
-
-    } catch (e) {
-      console.error("Hiba a belépésnél:", e);
-    }
-  };
 
   async function logout() {
     await supabaseClient.auth.signOut();
