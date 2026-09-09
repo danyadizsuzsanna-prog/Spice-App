@@ -18,13 +18,13 @@
   <!-- Chrome / Android specifikus beállítások -->
   <meta name="theme-color" content="#f8fafc">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
   <!-- iOS (Safari) specifikus beállítások -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Céges Portál">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
 
   <style>
     :root {
@@ -61,7 +61,6 @@
       touch-action: manipulation;
     }
 
-    /* Látványos háttér effektek */
     .ambient-bg {
       position: fixed;
       top: 0;
@@ -101,7 +100,6 @@
       max-width: 460px;
     }
 
-    /* Profil Fejléc */
     .user-card {
       background: var(--card-bg);
       backdrop-filter: blur(12px);
@@ -169,7 +167,6 @@
       background: #fee2e2;
     }
 
-    /* Címke */
     .section-title {
       font-size: 0.8rem;
       font-weight: 700;
@@ -180,7 +177,6 @@
       padding-left: 4px;
     }
 
-    /* Alkalmazás Kártyák */
     .app-list {
       display: flex;
       flex-direction: column;
@@ -263,7 +259,6 @@
       color: #ffffff;
     }
 
-    /* Betöltő képernyő */
     .loader-wrapper {
       text-align: center;
       padding: 60px 0;
@@ -294,24 +289,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <body>
-  <!-- Háttér effekt -->
   <div class="ambient-bg">
     <div class="ambient-shape shape-1"></div>
     <div class="ambient-shape shape-2"></div>
   </div>
 
   <div class="container">
-    
-    <!-- LOADER -->
     <div id="loading" class="loader-wrapper">
       <div class="spinner"></div>
       <p class="loader-text">Munkamenet ellenőrzése...</p>
     </div>
 
-    <!-- MAIN CONTENT (HA BE VAN LÉPVE) -->
     <div id="content" style="display: none;">
-      
-      <!-- PROFIL KÁRTYA -->
       <div class="user-card">
         <div class="user-info">
           <div class="avatar" id="avatarInitial">U</div>
@@ -325,14 +314,11 @@
         </button>
       </div>
 
-      <!-- CÍMKE -->
       <div class="section-title">Elérhető Alkalmazások</div>
 
-      <!-- ALKALMAZÁSOK LISTÁJA -->
       <div class="app-list">
-        
-        <!-- 1. APP: ÓRANYILVÁNTARTÁS -->
-        <a href="/oranyilvantartas.html" class="app-card">
+        <!-- Kezdő perjel eltávolítva -->
+        <a href="oranyilvantartas.html" class="app-card">
           <div class="app-icon-wrapper icon-time">
             <i class="fas fa-clock"></i>
           </div>
@@ -345,8 +331,8 @@
           </div>
         </a>
 
-        <!-- 2. APP: SZABIKEZELŐ PORTAL -->
-        <a href="/szabadsag.html" class="app-card">
+        <!-- Kezdő perjel eltávolítva -->
+        <a href="szabadsag.html" class="app-card">
           <div class="app-icon-wrapper icon-leave">
             <i class="fas fa-umbrella-beach"></i>
           </div>
@@ -358,9 +344,7 @@
             <i class="fas fa-chevron-right"></i>
           </div>
         </a>
-
       </div>
-
     </div>
   </div>
 
@@ -369,45 +353,41 @@
   const SUPABASE_ANON_KEY = "sb_publishable_Nf-XecuiQns2q7Olnu_VIw_kA78NBZS";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
- window.onload = async () => {
-  try {
-    // A Supabase automatikusan kiolvassa a hash-ből a sessiont
-    const { data: { session } } = await supabaseClient.auth.getSession();
+  window.onload = async () => {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
 
-    // Ha nincs bejelentkezve, elindítjuk az OAuth folyamatot
-    if (!session) {
-      await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: { 
-          redirectTo: 'https://danyadizsuzsanna-prog.github.io/Spice-App/' 
-        }
-      });
-      return;
+      if (!session) {
+        await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: { 
+            redirectTo: 'https://danyadizsuzsanna-prog.github.io/Spice-App/' 
+          }
+        });
+        return;
+      }
+
+      const userEmail = session.user.email.toLowerCase().trim();
+
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('nev')
+        .ilike('email', userEmail)
+        .maybeSingle();
+
+      const name = profile?.nev || userEmail;
+      document.getElementById('userName').innerText = name;
+      
+      const initial = name.charAt(0).toUpperCase();
+      document.getElementById('avatarInitial').innerText = initial;
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+
+    } catch (e) {
+      console.error("Hiba a belépésnél:", e);
     }
-
-    // Ha van session, lekérjük a felhasználó adatait
-    const userEmail = session.user.email.toLowerCase().trim();
-
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('nev')
-      .ilike('email', userEmail)
-      .maybeSingle();
-
-    const name = profile?.nev || userEmail;
-    document.getElementById('userName').innerText = name;
-    
-    // Kezdőbetű generálása az avatárba
-    const initial = name.charAt(0).toUpperCase();
-    document.getElementById('avatarInitial').innerText = initial;
-
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-
-  } catch (e) {
-    console.error("Hiba a belépésnél:", e);
-  }
-};
+  };
 
   async function logout() {
     await supabaseClient.auth.signOut();
@@ -416,7 +396,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('sw.js')
         .catch(err => console.log('SW hiba:', err));
     });
   }
