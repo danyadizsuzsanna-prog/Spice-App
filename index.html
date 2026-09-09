@@ -370,16 +370,18 @@
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   window.onload = async () => {
-    try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
 
-      if (!session) {
-        await supabaseClient.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: window.location.origin }
-        });
-        return;
-      }
+    if (!session) {
+      await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { 
+          redirectTo: window.location.origin + window.location.pathname 
+        }
+      });
+      return;
+    }
 
       const userEmail = session.user.email.toLowerCase().trim();
 
