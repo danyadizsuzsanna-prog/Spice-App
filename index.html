@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Céges Portál</title>
+  <base target="_top">
+  
+  <!-- Modern Tipográfia & İkonok -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- General PWA & Viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Chrome / Android specifikus beállítások -->
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+
+  <!-- iOS (Safari) specifikus beállítások -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Céges Portál">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+
+  <style>
+    :root {
+      --bg-main: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --border-color: rgba(226, 232, 240, 0.9);
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --accent-time: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --accent-leave: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      --shadow-soft: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+      --shadow-hover: 0 20px 30px -10px rgba(15, 23, 42, 0.12), 0 10px 15px -5px rgba(15, 23, 42, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: max(20px, env(safe-area-inset-top)) 16px max(30px, env(safe-area-inset-bottom));
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Látványos háttér effektek */
+    .ambient-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .ambient-shape {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+    }
+
+    .shape-1 {
+      top: -10%;
+      left: -10%;
+      width: 300px;
+      height: 300px;
+      background: #3b82f6;
+    }
+
+    .shape-2 {
+      bottom: 10%;
+      right: -10%;
+      width: 350px;
+      height: 350px;
+      background: #10b981;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 460px;
+    }
+
+    /* Profil Fejléc */
+    .user-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+
+    .user-text h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .user-text p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .logout-btn {
+      background: #f1f5f9;
+      border: none;
+      color: #ef4444;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .logout-btn:active {
+      transform: scale(0.92);
+      background: #fee2e2;
+    }
+
+    /* Címke */
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      padding-left: 4px;
+    }
+
+    /* Alkalmazás Kártyák */
+    .app-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .app-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow-soft);
+      text-decoration: none !important;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .app-card:hover, .app-card:active {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(203, 213, 225, 0.9);
+    }
+
+    .app-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      min-width: 56px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: #ffffff;
+      box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.12);
+    }
+
+    .icon-time { background: var(--accent-time); }
+    .icon-leave { background: var(--accent-leave); }
+
+    .app-details {
+      flex-grow: 1;
+      min-width: 0;
+    }
+
+    .app-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+
+    .app-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+      font-weight: 500;
+    }
+
+    .app-arrow {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+
+    .app-card:hover .app-arrow {
+      background: var(--text-primary);
+      color: #ffffff;
+    }
+
+    /* Betöltő képernyő */
+    .loader-wrapper {
+      text-align: center;
+      padding: 60px 0;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loader-text {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<body>
+  <!-- Háttér effekt -->
+  <div class="ambient-bg">
+    <div class="ambient-shape shape-1"></div>
+    <div class="ambient-shape shape-2"></div>
+  </div>
+
+  <div class="container">
+    
+    <!-- LOADER -->
+    <div id="loading" class="loader-wrapper">
+      <div class="spinner"></div>
+      <p class="loader-text">Munkamenet ellenőrzése...</p>
+    </div>
+
+    <!-- MAIN CONTENT (HA BE VAN LÉPVE) -->
+    <div id="content" style="display: none;">
+      
+      <!-- PROFIL KÁRTYA -->
+      <div class="user-card">
+        <div class="user-info">
+          <div class="avatar" id="avatarInitial">U</div>
+          <div class="user-text">
+            <p>Üdvözöljük!</p>
+            <h2 id="userName">Betöltés...</h2>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="logout()" title="Kijelentkezés">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+
+      <!-- CÍMKE -->
+      <div class="section-title">Elérhető Alkalmazások</div>
+
+      <!-- ALKALMAZÁSOK LISTÁJA -->
+      <div class="app-list">
+        
+        <!-- 1. APP: ÓRANYILVÁNTARTÁS -->
+        <a href="/oranyilvantartas.html" class="app-card">
+          <div class="app-icon-wrapper icon-time">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="app-details">
+            <div class="app-title">Óranyilvántartás</div>
+            <div class="app-desc">Munkaórák, feladatok és projektek rögzítése</div>
+          </div>
+          <div class="app-arrow">
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </a>
+
+        <!-- 2. APP: SZABIKEZELŐ PORTAL -->
+        <a href="/szabadsag.html" class="app-card">
+          <div class="app-icon-wrapper icon-leave">
+            <i class="fas fa-umbrella-beach"></i>
+          </div>
+          <div class="app-details">
+            <div class="app-title">Szabadságkezelő Portal</div>
+            <div class="app-desc">Szabadságok, home office és csúsztatások</div>
+          </div>
+          <div class="app-arrow">
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL = "https://gyfiwdhmhjaewwewxede.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_Nf-XecuiQns2q7Olnu_VIw_kA78NBZS";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  window.onload = async () => {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin }
+        });
+        return;
+      }
+
+      const userEmail = session.user.email.toLowerCase().trim();
+
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('nev')
+        .ilike('email', userEmail)
+        .maybeSingle();
+
+      const name = profile?.nev || userEmail;
+      document.getElementById('userName').innerText = name;
+      
+      // Kezdőbetű generálása az avatárba
+      const initial = name.charAt(0).toUpperCase();
+      document.getElementById('avatarInitial').innerText = initial;
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+
+    } catch (e) {
+      console.error("Hiba a belépésnél:", e);
+    }
+  };
+
+  async function logout() {
+    await supabaseClient.auth.signOut();
+    window.location.reload();
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .catch(err => console.log('SW hiba:', err));
+    });
+  }
+</script>
+</body>
+</html>
