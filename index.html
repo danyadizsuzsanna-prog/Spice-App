@@ -371,17 +371,26 @@
 
   window.onload = async () => {
   try {
+    // Ha a bejelentkezésből tért vissza a felhasználó, nem indítunk új bejelentkezést
+    if (window.location.hash.includes('access_token')) {
+      return;
+    }
+
     const { data: { session } } = await supabaseClient.auth.getSession();
 
     if (!session) {
       await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { 
-          redirectTo: window.location.origin + window.location.pathname 
+          redirectTo: 'https://danyadizsuzsanna-prog.github.io/Spice-App/' 
         }
       });
       return;
     }
+  } catch (err) {
+    console.error(err);
+  }
+};
 
       const userEmail = session.user.email.toLowerCase().trim();
 
