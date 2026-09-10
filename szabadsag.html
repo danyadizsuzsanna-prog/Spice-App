@@ -26,10 +26,13 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   
   <style>
-  /* Mobil Touch finomhangolás */
+  /* =========================================================
+     1. ALAPBEÁLLÍTÁSOK ÉS MOBIL TOUCH
+     ========================================================= */
   * { 
     -webkit-tap-highlight-color: transparent; 
     -webkit-touch-callout: none; 
+    box-sizing: border-box;
   }
 
   body { 
@@ -37,6 +40,7 @@
     font-family: 'Segoe UI', Tahoma, sans-serif; 
     padding-bottom: 30px; 
     padding-top: max(10px, env(safe-area-inset-top));
+    line-height: 1.5;
   }
 
   button, .nav-link, .card {
@@ -55,11 +59,24 @@
   .hidden { display: none !important; }
   .loading-spinner { display: inline-block; width: 2rem; height: 2rem; }
 
-  /* HAVI GRID NAPTÁR STÍLUSOK */
+  /* =========================================================
+     2. HAVI GRID NAPTÁR STÍLUSOK
+     ========================================================= */
   .calendar-container { max-width: 100%; }
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
   .calendar-day-header { text-align: center; font-weight: bold; background-color: #e9ecef; padding: 8px 0; border-radius: 6px; font-size: 0.88rem; color: #495057; }
-  .calendar-day { min-height: 100px; background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; }
+  
+  .calendar-day { 
+    min-height: 100px; 
+    background-color: #ffffff; 
+    border: 1px solid #dee2e6; 
+    border-radius: 8px; 
+    padding: 6px; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    transition: all 0.2s ease; 
+  }
   .calendar-day:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-color: #a1a1a1; }
   .calendar-day.other-month { background-color: #e9ecef; color: #adb5bd; opacity: 0.6; }
   .calendar-day.today { border: 2px solid #0d6efd; box-shadow: 0 0 8px rgba(13, 110, 253, 0.25); background-color: #f8f9ff; }
@@ -67,7 +84,9 @@
   .calendar-absences-container { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
   .absence-badge { font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: 1px 1px 2px rgba(0,0,0,0.08); }
 
-  /* GANTT NAPTÁR STÍLUSOK */
+  /* =========================================================
+     3. GANTT NAPTÁR STÍLUSOK
+     ========================================================= */
   #view-calendar { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
 
   .gantt-scroll-wrapper {
@@ -75,6 +94,7 @@
     max-height: 72vh !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
     position: relative !important;
     border: 1px solid #dee2e6 !important;
     border-radius: 8px !important;
@@ -218,38 +238,67 @@
   .badge-tr { background-color: #eab308 !important; color: #000000 !important; }
   .badge-u  { background-color: #854d0e !important; color: #ffffff !important; }
 
-  /* Mobil kártya nézet listás táblázatokhoz (768px alatt) */
+  /* =========================================================
+     4. MOBIL ELCSÚSZÁSOK ÉS KÁRTYA NÉZET (768px ALATT)
+     ========================================================= */
   @media screen and (max-width: 768px) {
+    /* A) HAVI GRID NAPTÁR JAVÍTÁSA (Elnyújtott téglák megszüntetése) */
+    .calendar-day {
+      min-height: 52px !important; /* 100px helyett arányos kisméretű doboz */
+      padding: 3px !important;
+    }
+
+    .calendar-day-num {
+      font-size: 0.78rem !important;
+    }
+
+    .calendar-absences-container {
+      gap: 2px !important;
+      margin-top: 2px !important;
+    }
+
+    .absence-badge {
+      font-size: 0.62rem !important;
+      padding: 1px 3px !important;
+    }
+
+    /* Naptár léptető gombok és címek egymásba lógásának elkerülése */
+    .calendar-container .d-flex {
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+    }
+
+    /* B) TÁBLÁZATOK MOBIL KÁRTYA NÉZETE */
     .table-responsive:not(.gantt-scroll-wrapper) table thead {
-      display: none;
+      display: none !important;
     }
 
     .table-responsive:not(.gantt-scroll-wrapper) table, 
     .table-responsive:not(.gantt-scroll-wrapper) tbody, 
     .table-responsive:not(.gantt-scroll-wrapper) tr, 
     .table-responsive:not(.gantt-scroll-wrapper) td {
-      display: block;
-      width: 100%;
+      display: block !important;
+      width: 100% !important;
     }
 
     .table-responsive:not(.gantt-scroll-wrapper) tr {
-      background: #ffffff;
-      border: 1px solid #e0e0e0 !important;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-      margin-bottom: 12px;
-      padding: 8px 12px;
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+      margin-bottom: 12px !important;
+      padding: 10px 14px !important;
     }
 
     .table-responsive:not(.gantt-scroll-wrapper) td {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0 !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      padding: 6px 0 !important;
       border: none !important;
-      border-bottom: 1px solid #f0f0f0 !important;
-      font-size: 0.9rem;
-      text-align: right;
+      border-bottom: 1px solid #f1f5f9 !important;
+      font-size: 0.88rem !important;
+      text-align: right !important;
     }
 
     .table-responsive:not(.gantt-scroll-wrapper) td:last-child {
@@ -258,21 +307,27 @@
 
     .table-responsive:not(.gantt-scroll-wrapper) td::before {
       content: attr(data-label);
-      font-weight: 600;
-      color: #6c757d;
-      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748b;
+      font-size: 0.78rem;
       text-align: left;
       padding-right: 10px;
+      flex-shrink: 0;
     }
   }
-  </style>
+
+  /* C) ELEMEK KILÓGÁSÁNAK MEGAKADÁLYOZÁSA */
+  .btn-group, select, .form-select, .table-responsive {
+    max-width: 100% !important;
+  }
+</style>
 </head>
 <body>
 
 <!-- NAVIGÁCIÓS SÁV -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" onclick="switchView('dashboard')" style="cursor: pointer;">🌴 SzabiKezelő Portal</a>
+    <a class="navbar-brand fw-bold" onclick="switchView('dashboard')" style="cursor: pointer;">🌴 Szabadság Kezelő Portal</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -1152,10 +1207,13 @@
             <label for="payoutBand" class="form-label fw-bold">Sáv <span class="text-danger">*</span></label>
             <select id="payoutBand" class="form-select" required>
               <option value="" disabled selected>-- Válassz sávot --</option>
-              <option value="S">S (10.000Ft - 20.000Ft)</option>
-              <option value="M">M</option>
-              <option value="L">L</option>
-              <option value="Több napos esemény">Több napos esemény</option>
+              <option value="S">Túlmunka - S (10.000 Ft - 20.000 Ft)</option>
+              <option value="M">Túlmunka - M (25.000 Ft - 75.000 Ft)</option>
+              <option value="L">Túlmunka - L ( 75.000 Ft - 200.000 Ft)</option>
+              <option value="L">Rendezvény/Forgatás - S ( 10.000 Ft - 30.000 Ft)</option>
+              <option value="L">Rendezvény/Forgatás - M ( 30.000 Ft - 50.000 Ft)</option>
+              <option value="L">Rendezvény/Forgatás - L ( 50.000 Ft - 65.000 Ft)</option>
+              <option value="Több napos esemény">Több napos esemény ( 200.000 Ft - 300.000 Ft)</option>
             </select>
           </div>
 
@@ -2674,10 +2732,8 @@ async function saveEditUser(event) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let weekdayOvertimes = [];
-    let weekendOvertimes = [];
-    let nightOvertimes = [];
-    let lejartTulora = 0;
+    // 1. MUNKALAPOK CSOPORTOSÍTÁSA ÉS ÖSSZEGZÉSE NAPOK SZERINT
+    const dailyLogsMap = {};
 
     (overtimeLogs || []).forEach(o => {
       const emailMatch = normalizeStr(o.user_email) === targetEmail;
@@ -2685,30 +2741,64 @@ async function saveEditUser(event) {
       const isApproved = !o.status || (rawStatus === 'approved' || rawStatus.includes('jovahagy') || rawStatus === 'elfogadva');
       
       if (emailMatch && isApproved && o.tipus !== 'Kifizetés' && o.tipus !== 'payout') {
-        const entryDate = new Date(o.datum);
-        entryDate.setHours(0, 0, 0, 0);
-        
-        const dayOfWeek = entryDate.getDay();
-        const isWeekendDay = (dayOfWeek === 0 || dayOfWeek === 6);
-        const t = normalizeStr(o.tipus);
-        
-        const isNightEvent = Boolean(o.ejszakai_esemeny || t.includes('ejszak'));
-        const isWeekendEvent = Boolean(o.hetvegi_esemeny || o.is_weekend || o.is_event || t.includes('hetveg') || t.includes('rendezveny') || isWeekendDay);
+        const rawDate = o.datum ? String(o.datum).substring(0, 10) : '';
+        if (!rawDate) return;
+
+        if (!dailyLogsMap[rawDate]) {
+          dailyLogsMap[rawDate] = {
+            datum: rawDate,
+            totalHours: 0,
+            isNight: false,
+            isWeekend: false
+          };
+        }
 
         const rawHours = Number(o.oraszam || o.orak) || 0;
-        let overtimeHours = (isNightEvent || isWeekendEvent) ? rawHours : (rawHours > 8 ? (rawHours - 8) : (o.orak && !o.oraszam ? rawHours : 0));
+        dailyLogsMap[rawDate].totalHours += rawHours;
 
-        if (overtimeHours > 0) {
-          const diffDays = Math.floor((today - entryDate) / (1000 * 60 * 60 * 24));
-          
-          if (diffDays > 45) {
-            lejartTulora += overtimeHours;
-          } else {
-            const item = { datum: entryDate, orak: overtimeHours };
-            if (isNightEvent) nightOvertimes.push(item);
-            else if (isWeekendEvent) weekendOvertimes.push(item);
-            else weekdayOvertimes.push(item);
-          }
+        const t = normalizeStr(o.tipus || '');
+        if (Boolean(o.ejszakai_esemeny || t.includes('ejszak'))) {
+          dailyLogsMap[rawDate].isNight = true;
+        }
+        if (Boolean(o.hetvegi_esemeny || o.is_weekend || o.is_event || t.includes('hetveg') || t.includes('rendezveny'))) {
+          dailyLogsMap[rawDate].isWeekend = true;
+        }
+      }
+    });
+
+    let weekdayOvertimes = [];
+    let weekendOvertimes = [];
+    let nightOvertimes = [];
+    let lejartTulora = 0;
+
+    // 2. NAPI TÚLÓRÁK KISZÁMÍTÁSA A NAPI ÖSSZÓRASZÁMBÓL (NAPI LIMIT = 8 ÓRA)
+    Object.values(dailyLogsMap).forEach(dayObj => {
+      const entryDate = new Date(dayObj.datum + 'T12:00:00');
+      const dayOfWeek = entryDate.getDay();
+      const isWeekendDay = (dayOfWeek === 0 || dayOfWeek === 6);
+
+      const isNightEvent = dayObj.isNight;
+      const isWeekendEvent = dayObj.isWeekend || isWeekendDay;
+
+      let overtimeHours = 0;
+      if (isNightEvent || isWeekendEvent) {
+        // Hétvégén vagy éjszakai eseményen a teljes ledolgozott idő túlóra
+        overtimeHours = dayObj.totalHours;
+      } else {
+        // Hétköznap csak a 8 óra feletti rész számít túlórának
+        overtimeHours = Math.max(0, dayObj.totalHours - 8);
+      }
+
+      if (overtimeHours > 0) {
+        const diffDays = Math.floor((today - entryDate) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > 45) {
+          lejartTulora += overtimeHours;
+        } else {
+          const item = { datum: entryDate, orak: overtimeHours };
+          if (isNightEvent) nightOvertimes.push(item);
+          else if (isWeekendEvent) weekendOvertimes.push(item);
+          else weekdayOvertimes.push(item);
         }
       }
     });
@@ -2729,6 +2819,7 @@ async function saveEditUser(event) {
       return remaining;
     };
 
+    // 3. JÓVÁHAGYOTT CSÚSZTATÁSOK LEVONÁSA
     let totalUsedHours = 0;
     (leaveRequests || []).forEach(r => {
       const reqEmail = normalizeStr(r.user_email);
@@ -2739,14 +2830,12 @@ async function saveEditUser(event) {
       if (reqEmail === targetEmail && isApproved && (t.includes('csusztatas') || t === 'cs')) {
         let hours = Number(r.oraszam || r.orak) || 0;
         
-        // Ha nincsenek órák, kiszámoljuk a kezdő/vég időből
         if (!hours && r.kezdo_ido && r.veg_ido) {
           const [h1, m1] = String(r.kezdo_ido).split(':').map(Number);
           const [h2, m2] = String(r.veg_ido).split(':').map(Number);
           if (!isNaN(h1) && !isNaN(h2)) hours = (h2 + m2 / 60) - (h1 + m1 / 60);
         }
 
-        // Időintervallum szöveg kezelése (pl. "09:00 - 12:00")
         if (!hours) {
           const intervalStr = String(r.ido || r.időtartam || r.ido_intervallum || '').trim();
           if (intervalStr.includes('-')) {
@@ -2763,7 +2852,6 @@ async function saveEditUser(event) {
       }
     });
 
-    // Levonjuk a csúsztatásokat a felhalmozott órákból
     let uncoveredHours = totalUsedHours;
     if (uncoveredHours > 0) {
       uncoveredHours = deductFrom(weekdayOvertimes, uncoveredHours);
@@ -2771,7 +2859,7 @@ async function saveEditUser(event) {
       if (uncoveredHours > 0) uncoveredHours = deductFrom(nightOvertimes, uncoveredHours);
     }
 
-    // Túlóra kifizetések levonása
+    // 4. KIFIZETÉSEK LEVONÁSA
     (overtimeDecisions || []).forEach(d => {
       const emailMatch = normalizeStr(d.user_email || d.munkatars_email) === targetEmail;
       const rawStatus = normalizeStr(d.status);
@@ -2801,11 +2889,10 @@ async function saveEditUser(event) {
     let hetvegiTulora = weekendOvertimes.reduce((acc, i) => acc + i.orak, 0);
     let ejszakaiTulora = nightOvertimes.reduce((acc, i) => acc + i.orak, 0);
 
-    // HA LEVONATLAN (FEDEZETLEN) CSÚSZTATÁS MARADT, AZ MÍNUSZBA VISZI AZ ÖSSZESEN-T
     let osszesCsusztathato = hetkoznapiTulora + hetvegiTulora + ejszakaiTulora - uncoveredHours;
 
     if (uncoveredHours > 0) {
-      hetkoznapiTulora -= uncoveredHours; // A hétköznapi keretet is mínuszba állítjuk
+      hetkoznapiTulora -= uncoveredHours;
     }
 
     return {
