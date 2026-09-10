@@ -27,7 +27,7 @@
   
   <style>
   /* =========================================================
-     1. ALAPBEÁLLÍTÁSOK ÉS MOBIL TOUCH
+     1. ALAPBEÁLLÍTÁSOK ÉS TOUCH
      ========================================================= */
   * { 
     -webkit-tap-highlight-color: transparent; 
@@ -60,7 +60,7 @@
   .loading-spinner { display: inline-block; width: 2rem; height: 2rem; }
 
   /* =========================================================
-     2. HAVI GRID NAPTÁR STÍLUSOK
+     2. HAVI GRID NAPTÁR ÉS JELMAGYARÁZAT JAVÍTÁSA
      ========================================================= */
   .calendar-container { max-width: 100%; }
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
@@ -83,6 +83,19 @@
   .calendar-day-num { font-weight: bold; font-size: 0.92rem; margin-left: 2px; }
   .calendar-absences-container { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
   .absence-badge { font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: 1px 1px 2px rgba(0,0,0,0.08); }
+
+  /* Kisméretű, kompakt jelmagyarázat gombok (Visszaállítva az eredeti stílusra) */
+  .calendar-container .badge,
+  .d-flex.flex-wrap.gap-2 .badge {
+    width: auto !important;
+    display: inline-block !important;
+    padding: 5px 9px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+    margin: 2px !important;
+  }
 
   /* =========================================================
      3. GANTT NAPTÁR STÍLUSOK
@@ -193,10 +206,7 @@
     background-color: #f1f5f9 !important;
   }
 
-  .timeline-table td.weekend-cell {
-    background-color: #fef2f2 !important;
-  }
-
+  .timeline-table td.weekend-cell { background-color: #fef2f2 !important; }
   .timeline-table td.today-cell {
     background-color: #eff6ff !important;
     border-left: 2px solid #3b82f6 !important;
@@ -242,43 +252,24 @@
      4. SPECIFIKUS MOBIL JAVÍTÁSOK (768px ALATT)
      ========================================================= */
   @media screen and (max-width: 768px) {
-    /* A) CÍMSOROK ÉS GOMBOK ÜTKÖZÉSÉNEK MEGSZÜNTETÉSE (2. & 3. KÉP) */
-    .d-flex.justify-content-between.align-items-center,
-    .card-header.d-flex,
-    .card-body > .d-flex {
+    /* Fejlécek és gombsorok szétválasztása mobilon */
+    .card-body > .d-flex:first-child,
+    .card > .d-flex:first-child {
       flex-direction: column !important;
       align-items: flex-start !important;
       gap: 12px !important;
     }
 
-    .d-flex.gap-2,
-    .d-flex.justify-content-between > select,
-    .d-flex.justify-content-between > button,
-    .d-flex.justify-content-between > div {
-      width: 100% !important;
-      max-width: 100% !important;
-    }
-
-    .d-flex.gap-2 > * {
-      width: 100% !important;
-    }
-
-    /* B) HAVI NAPTÁR SŰRÍTÉSE */
+    /* Havi grid naptár sűrítése */
     .calendar-day {
       min-height: 52px !important;
       padding: 3px !important;
     }
 
-    .calendar-day-num {
-      font-size: 0.78rem !important;
-    }
+    .calendar-day-num { font-size: 0.78rem !important; }
+    .calendar-absences-container { gap: 2px !important; margin-top: 2px !important; }
 
-    .absence-badge {
-      font-size: 0.62rem !important;
-      padding: 1px 3px !important;
-    }
-
-    /* C) MUNKATÁRSAK KÁRTYÁINAK CSÚSZÁSMENTESÍTÉSE (1. KÉP) */
+    /* Munkatársak kártyái (1. és 2. kép javítása) */
     .table-responsive:not(.gantt-scroll-wrapper) table thead {
       display: none !important;
     }
@@ -300,17 +291,17 @@
       padding: 12px 14px !important;
     }
 
-    /* Grid elrendezés a cellákban: Balra a címke, jobbra egyben a tartalom */
+    /* A td tartalmak rendezése: balra a mezőnév, jobbra egy tömbben a tartalom */
     .table-responsive:not(.gantt-scroll-wrapper) td {
-      display: grid !important;
-      grid-template-columns: minmax(110px, auto) 1fr !important;
-      gap: 10px !important;
+      display: flex !important;
+      justify-content: space-between !important;
       align-items: center !important;
       padding: 8px 0 !important;
       border: none !important;
       border-bottom: 1px solid #f1f5f9 !important;
       font-size: 0.88rem !important;
       text-align: right !important;
+      word-break: break-word !important;
     }
 
     .table-responsive:not(.gantt-scroll-wrapper) td:last-child {
@@ -324,14 +315,17 @@
       font-size: 0.8rem;
       text-align: left !important;
       white-space: nowrap;
+      margin-right: 12px;
+      flex-shrink: 0;
     }
 
+    /* Többsoros elemek (név + e-mail) rendezett jobbra igazítása */
     .table-responsive:not(.gantt-scroll-wrapper) td > * {
       text-align: right !important;
+      max-width: 100% !important;
     }
   }
 
-  /* Korlátok elemek kilógása ellen */
   .btn-group, select, .form-select, .table-responsive {
     max-width: 100% !important;
   }
