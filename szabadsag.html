@@ -27,8 +27,10 @@
   
   <style>
   /* =========================================================
-     1. ALAPBEÁLLÍTÁSOK ÉS TOUCH
+     1. NATÍV APP TIPOGRÁFIA ÉS TOUCH ALAPOK
      ========================================================= */
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
   * { 
     -webkit-tap-highlight-color: transparent; 
     -webkit-touch-callout: none; 
@@ -36,11 +38,12 @@
   }
 
   body { 
-    background-color: #f4f7f6; 
-    font-family: 'Segoe UI', Tahoma, sans-serif; 
-    padding-bottom: 30px; 
-    padding-top: max(10px, env(safe-area-inset-top));
-    line-height: 1.5;
+    background-color: #f1f5f9; 
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; 
+    padding-bottom: 40px; 
+    padding-top: max(12px, env(safe-area-inset-top));
+    color: #0f172a;
+    line-height: 1.45;
   }
 
   button, .nav-link, .card {
@@ -51,40 +54,57 @@
   input, textarea, select {
     user-select: text;
     font-size: 16px !important;
+    font-family: inherit !important;
+    border-radius: 10px !important;
   }
 
-  .navbar { box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
-  .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 20px; }
+  .navbar { box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+
+  /* App Shell Kártyák */
+  .card { 
+    border: 1px solid rgba(226, 232, 240, 0.8) !important; 
+    border-radius: 20px !important; 
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02) !important; 
+    margin-bottom: 20px;
+    background: #ffffff !important;
+  }
+
   .nav-link { cursor: pointer; }
   .hidden { display: none !important; }
   .loading-spinner { display: inline-block; width: 2rem; height: 2rem; }
 
+  /* Szöveg- és e-mail túlfolyás elleni védelem */
+  td, th, span, small, p, div, strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   /* =========================================================
-     2. HAVI GRID NAPTÁR ÉS JELMAGYARÁZAT (Garantáltan kompakt gombok)
+     2. HAVI GRID NAPTÁR ÉS KOMPAKT JELMAGYARÁZAT PILL-EK
      ========================================================= */
   .calendar-container { max-width: 100%; }
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-  .calendar-day-header { text-align: center; font-weight: bold; background-color: #e9ecef; padding: 8px 0; border-radius: 6px; font-size: 0.88rem; color: #495057; }
+  .calendar-day-header { text-align: center; font-weight: 700; background-color: #e2e8f0; padding: 6px 0; border-radius: 8px; font-size: 0.8rem; color: #475569; }
   
   .calendar-day { 
-    min-height: 100px; 
+    min-height: 95px; 
     background-color: #ffffff; 
-    border: 1px solid #dee2e6; 
-    border-radius: 8px; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 12px; 
     padding: 6px; 
     display: flex; 
     flex-direction: column; 
     justify-content: space-between; 
     transition: all 0.2s ease; 
   }
-  .calendar-day:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-color: #a1a1a1; }
-  .calendar-day.other-month { background-color: #e9ecef; color: #adb5bd; opacity: 0.6; }
-  .calendar-day.today { border: 2px solid #0d6efd; box-shadow: 0 0 8px rgba(13, 110, 253, 0.25); background-color: #f8f9ff; }
-  .calendar-day-num { font-weight: bold; font-size: 0.92rem; margin-left: 2px; }
+  .calendar-day:hover { box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); border-color: #cbd5e1; }
+  .calendar-day.other-month { background-color: #f8fafc; color: #cbd5e1; opacity: 0.5; }
+  .calendar-day.today { border: 2px solid #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.25); background-color: #eff6ff; }
+  .calendar-day-num { font-weight: 800; font-size: 0.85rem; margin-left: 2px; }
   .calendar-absences-container { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
-  .absence-badge { font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: 1px 1px 2px rgba(0,0,0,0.08); }
+  .absence-badge { font-size: 0.65rem; padding: 2px 4px; border-radius: 5px; font-weight: 800; text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* 🎯 JELMAGYARÁZAT JELVÉNYEK VISSZAÁLLÍTÁSA (Szigorúan felülírja a flex-stretch szabályokat) */
+  /* 🎯 JELMAGYARÁZAT: Visszaállítva kompakt lekerekített pirula formára */
   .calendar-container .d-flex.flex-wrap,
   .d-flex.flex-wrap {
     display: flex !important;
@@ -99,20 +119,21 @@
   .badge.badge-fn, .badge.badge-ho, .badge.badge-cs, .badge.badge-k,
   .badge.badge-tr, .badge.badge-u {
     width: auto !important;
-    max-width: max-content !important;
+    max-width: fit-content !important;
     flex: 0 0 auto !important;
-    display: inline-block !important;
+    display: inline-flex !important;
+    align-items: center !important;
     padding: 6px 12px !important;
-    font-size: 0.73rem !important;
+    font-size: 0.72rem !important;
     font-weight: 700 !important;
     border-radius: 20px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
-    margin: 2px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+    margin: 0 !important;
     white-space: nowrap !important;
   }
 
   /* =========================================================
-     3. GANTT NAPTÁR STÍLUSOK
+     3. GANTT IDŐVONAL NAPTÁR
      ========================================================= */
   #view-calendar { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
 
@@ -123,8 +144,8 @@
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
     position: relative !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
     background-color: #ffffff !important;
   }
 
@@ -143,14 +164,14 @@
     position: sticky !important;
     top: 0 !important;
     z-index: 50 !important;
-    background-color: #212529 !important;
+    background-color: #0f172a !important;
     color: #ffffff !important;
     font-weight: 700 !important;
     padding: 2px 0 !important;
     text-align: center !important;
     font-size: 0.65rem !important;
-    border-bottom: 2px solid #495057 !important;
-    border-right: 1px solid #343a40 !important;
+    border-bottom: 2px solid #334155 !important;
+    border-right: 1px solid #1e293b !important;
     height: 20px !important;
     line-height: 20px !important;
   }
@@ -171,7 +192,7 @@
     font-size: 0.72rem !important;
     text-align: left !important;
     padding-left: 8px !important;
-    border-right: 2px solid #495057 !important;
+    border-right: 2px solid #334155 !important;
   }
 
   .timeline-table tbody tr td:first-child,
@@ -183,12 +204,12 @@
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    border-right: 2px solid #ced4da !important;
-    border-bottom: 1px solid #e9ecef !important;
+    border-right: 2px solid #cbd5e1 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
     padding: 0px 6px !important;
     font-size: 0.7rem !important;
     font-weight: 600;
-    color: #212529;
+    color: #0f172a;
     height: 16px !important;
     max-height: 16px !important;
     line-height: 16px !important;
@@ -216,7 +237,7 @@
     border-bottom: 1px solid #f1f3f5 !important;
   }
 
-  .timeline-table tbody tr.gantt-row:hover td { background-color: #f1f5f9 !important; }
+  .timeline-table tbody tr.gantt-row:hover td { background-color: #f8fafc !important; }
   .timeline-table td.weekend-cell { background-color: #fef2f2 !important; }
   .timeline-table td.today-cell {
     background-color: #eff6ff !important;
@@ -226,7 +247,7 @@
 
   .timeline-table tr.group-header-row td {
     background-color: #e2e8f0 !important;
-    color: #1e293b !important;
+    color: #0f172a !important;
     font-weight: 800 !important;
     font-size: 0.75rem !important;
     letter-spacing: 0.5px;
@@ -260,120 +281,117 @@
   .badge-u  { background-color: #854d0e !important; color: #ffffff !important; }
 
   /* =========================================================
-     4. BÉRSZÁMFEJTÉSI, CSAPAT ÉS RIPORT TÁBLÁZATOK (Görgethető mátrix)
+     5. COMPLEX BÉRSZÁMFEJTÉSI ÉS MÁTRIX TÁBLÁZAT WIDGETEK
      ========================================================= */
-  .table-responsive {
+  .payroll-scroll,
+  .table-responsive.payroll-scroll,
+  .table-responsive.matrix-container {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     display: block !important;
     width: 100% !important;
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
   }
 
-  /* Kifejezetten a bérszámfejtés/mátrix táblázatok megóvása az összenyomódástól */
-  .table-responsive table {
+  .payroll-scroll table,
+  .table-responsive.payroll-scroll table,
+  .matrix-container table {
+    min-width: 680px !important;
     border-collapse: collapse !important;
   }
 
+  .payroll-scroll td, .payroll-scroll th,
+  .matrix-container td, .matrix-container th {
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+  }
+
   /* =========================================================
-     5. SPECIFIKUS MOBIL JAVÍTÁSOK (768px ALATT)
+     6. SPECIFIKUS MOBIL JAVÍTÁSOK ÉS NATIVE APP KÁRTYÁK (768px ALATT)
      ========================================================= */
   @media screen and (max-width: 768px) {
-    /* A) FEJLECEK, GOMBSOROK ÉS SZŰRŐK RUGALMAS EGYMÁS ALÁ RENDEZÉSE */
+    /* Fejlécek és szűrők rugalmas egymás alá rendezése */
     #view-overtime-approval .d-flex.justify-content-between,
     .tab-content > .d-flex.justify-content-between,
     .card-body > .d-flex.justify-content-between,
     .card > .d-flex.justify-content-between {
       flex-direction: column !important;
       align-items: stretch !important;
-      gap: 10px !important;
+      gap: 12px !important;
     }
 
-    .form-select,
-    select,
-    #overtimeApprovalMonthFilter {
+    .form-select, select, #overtimeApprovalMonthFilter {
       width: 100% !important;
       max-width: 100% !important;
+      border-radius: 10px !important;
     }
 
-    /* B) HAVI GRID NAPTÁR SŰRÍTÉSE MOBILON */
+    /* Havi grid naptár kompakttá tétele */
     .calendar-day {
-      min-height: 52px !important;
+      min-height: 50px !important;
       padding: 3px !important;
+      border-radius: 8px !important;
     }
-
-    .calendar-day-num { font-size: 0.78rem !important; }
+    .calendar-day-num { font-size: 0.75rem !important; }
     .calendar-absences-container { gap: 2px !important; margin-top: 2px !important; }
 
-    /* C) MUNKATÁRSAK KÁRTYÁI & E-MAIL CÍMEK TÖRDELESE (Admin fül) */
-    .table-responsive:not(.gantt-scroll-wrapper) table thead {
+    /* Sima listás táblázatok átalakítása App Kártyákká */
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) table thead {
       display: none !important;
     }
 
-    .table-responsive:not(.gantt-scroll-wrapper) table, 
-    .table-responsive:not(.gantt-scroll-wrapper) tbody, 
-    .table-responsive:not(.gantt-scroll-wrapper) tr, 
-    .table-responsive:not(.gantt-scroll-wrapper) td {
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) table, 
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) tbody, 
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) tr, 
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td {
       display: block !important;
       width: 100% !important;
     }
 
-    .table-responsive:not(.gantt-scroll-wrapper) tr {
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) tr {
       background: #ffffff !important;
       border: 1px solid #e2e8f0 !important;
-      border-radius: 12px !important;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03) !important;
       margin-bottom: 12px !important;
       padding: 12px 14px !important;
     }
 
-    /* Cellák elrendezése: balra a mezőnév, jobbra a tördelhető tartalom */
-    .table-responsive:not(.gantt-scroll-wrapper) td {
-      display: grid !important;
-      grid-template-columns: 110px 1fr !important;
-      gap: 10px !important;
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td {
+      display: flex !important;
+      justify-content: space-between !important;
       align-items: center !important;
       padding: 8px 0 !important;
       border: none !important;
       border-bottom: 1px solid #f1f5f9 !important;
       font-size: 0.88rem !important;
-      text-align: right !important;
     }
 
-    .table-responsive:not(.gantt-scroll-wrapper) td:last-child {
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td:last-child {
       border-bottom: none !important;
     }
 
-    .table-responsive:not(.gantt-scroll-wrapper) td::before {
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td::before {
       content: attr(data-label);
       font-weight: 700;
       color: #64748b;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       text-align: left !important;
       white-space: nowrap;
+      margin-right: 12px;
+      flex-shrink: 0;
     }
 
-    /* 🎯 E-mail címek és hosszú nevek tördelése kilógás ellen */
-    .table-responsive:not(.gantt-scroll-wrapper) td > *,
+    /* Az e-mail címek és nevek tördelése jobbra igazítva */
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td > *,
     #adminUsersTableBody td,
     td span, td strong, td small {
       text-align: right !important;
       word-break: break-all !important;
       overflow-wrap: anywhere !important;
     }
-  }
-
-  /* D) MÁTRIX ÉS BÉRSZÁMFEJTÉSI TÁBLÁZAT MEGÓVÁSA A TÖRTÉSTŐL */
-  .table-responsive.matrix-container table,
-  .table-responsive.payroll-scroll table,
-  #teamBalancesTableBody table {
-    min-width: 680px !important;
-  }
-
-  .table-responsive.matrix-container td,
-  .table-responsive.matrix-container th,
-  .table-responsive.payroll-scroll td,
-  .table-responsive.payroll-scroll th {
-    white-space: nowrap !important;
   }
 
   .btn-group, select, .form-select, .table-responsive {
