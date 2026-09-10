@@ -59,6 +59,12 @@
   .hidden { display: none !important; }
   .loading-spinner { display: inline-block; width: 2rem; height: 2rem; }
 
+  /* Hosszú e-mail címek és szövegek tördelése túlfolyás ellen */
+  td, th, span, small, p, div, strong {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
   /* =========================================================
      2. HAVI GRID NAPTÁR ÉS JELMAGYARÁZAT JAVÍTÁSA
      ========================================================= */
@@ -84,17 +90,28 @@
   .calendar-absences-container { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
   .absence-badge { font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: 1px 1px 2px rgba(0,0,0,0.08); }
 
-  /* Kisméretű, kompakt jelmagyarázat gombok (Visszaállítva az eredeti stílusra) */
+  /* 🎯 JELMAGYARÁZAT JELVÉNYEK SIKERES HELYREÁLLÍTÁSA (Nem nyúlnak el egész sorrá) */
+  .calendar-container .d-flex.flex-wrap,
+  .d-flex.flex-wrap.gap-2 {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
   .calendar-container .badge,
-  .d-flex.flex-wrap.gap-2 .badge {
+  .d-flex.flex-wrap.gap-2 .badge,
+  .d-flex.flex-wrap .badge {
     width: auto !important;
+    max-width: fit-content !important;
+    flex: 0 0 auto !important;
     display: inline-block !important;
-    padding: 5px 9px !important;
-    font-size: 0.72rem !important;
+    padding: 6px 10px !important;
+    font-size: 0.73rem !important;
     font-weight: 700 !important;
     border-radius: 6px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
-    margin: 2px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
   }
 
   /* =========================================================
@@ -252,15 +269,30 @@
      4. SPECIFIKUS MOBIL JAVÍTÁSOK (768px ALATT)
      ========================================================= */
   @media screen and (max-width: 768px) {
-    /* Fejlécek és gombsorok szétválasztása mobilon */
-    .card-body > .d-flex:first-child,
-    .card > .d-flex:first-child {
+    /* 🎯 A) FEJLECEK, GOMBSOROK ÉS SZŰRŐK EGYMÁS ALÁ RENDEZÉSE (Bérszámfejtés & Jóváhagyás fül javítása) */
+    .card-body > .d-flex,
+    .card > .d-flex,
+    .tab-content > .d-flex,
+    #view-overtime-approval .d-flex.justify-content-between {
       flex-direction: column !important;
-      align-items: flex-start !important;
-      gap: 12px !important;
+      align-items: stretch !important;
+      gap: 10px !important;
     }
 
-    /* Havi grid naptár sűrítése */
+    .d-flex.gap-2 {
+      flex-direction: column !important;
+      width: 100% !important;
+    }
+
+    .d-flex.gap-2 > *,
+    .form-select,
+    select,
+    .btn {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    /* B) HAVI GRID NAPTÁR SŰRÍTÉSE */
     .calendar-day {
       min-height: 52px !important;
       padding: 3px !important;
@@ -269,7 +301,7 @@
     .calendar-day-num { font-size: 0.78rem !important; }
     .calendar-absences-container { gap: 2px !important; margin-top: 2px !important; }
 
-    /* Munkatársak kártyái (1. és 2. kép javítása) */
+    /* 🎯 C) MUNKATÁRSAK KÁRTYÁI & E-MAIL CÍMEK TÖRDELESE (Admin fül javítása) */
     .table-responsive:not(.gantt-scroll-wrapper) table thead {
       display: none !important;
     }
@@ -291,17 +323,17 @@
       padding: 12px 14px !important;
     }
 
-    /* A td tartalmak rendezése: balra a mezőnév, jobbra egy tömbben a tartalom */
+    /* Kételemű rács: balra a mezőnév, jobbra a tartalom break-all tördeléssel */
     .table-responsive:not(.gantt-scroll-wrapper) td {
-      display: flex !important;
-      justify-content: space-between !important;
+      display: grid !important;
+      grid-template-columns: 110px 1fr !important;
+      gap: 10px !important;
       align-items: center !important;
       padding: 8px 0 !important;
       border: none !important;
       border-bottom: 1px solid #f1f5f9 !important;
       font-size: 0.88rem !important;
       text-align: right !important;
-      word-break: break-word !important;
     }
 
     .table-responsive:not(.gantt-scroll-wrapper) td:last-child {
@@ -315,14 +347,13 @@
       font-size: 0.8rem;
       text-align: left !important;
       white-space: nowrap;
-      margin-right: 12px;
-      flex-shrink: 0;
     }
 
-    /* Többsoros elemek (név + e-mail) rendezett jobbra igazítása */
+    /* Az e-mail címek és nevek tördelésének kikényszerítése jobbra igazítva */
     .table-responsive:not(.gantt-scroll-wrapper) td > * {
       text-align: right !important;
-      max-width: 100% !important;
+      word-break: break-all !important;
+      overflow-wrap: anywhere !important;
     }
   }
 
