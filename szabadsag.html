@@ -4072,6 +4072,16 @@ function validateDates() {
     }
     return { y: pYear, m: pMonth };
   }
+
+  function setAppActive(element) {
+  document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
+  element.classList.add('active');
+  
+  // Mikro-rezgés visszajelzés gombnyomáskor (Haptic feedback)
+  if ('vibrate' in navigator) {
+    navigator.vibrate(8);
+  }
+}
 </script>
 
 <script>
