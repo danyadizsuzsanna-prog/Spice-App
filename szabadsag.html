@@ -27,7 +27,7 @@
   
   <style>
   /* =========================================================
-     1. NATÍV APP TIPOGRÁFIA ÉS TOUCH ALAPOK (PWA Feel)
+     1. NATÍV APP TIPOGRÁFIA ÉS CLEAN ALAPOK (NINCS RUGÓZÁS)
      ========================================================= */
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
@@ -44,22 +44,19 @@
   body { 
     background-color: #f8fafc; 
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; 
-    padding-bottom: 40px; 
+    padding-bottom: 30px; 
     padding-top: max(12px, env(safe-area-inset-top));
     color: #0f172a;
     line-height: 1.45;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Érintési visszajelzés (Gombnyomásra rugózó elemek) */
+  /* Érintési visszajelzés: LETILTVA A MOZGÁS ÉS SKÁLÁZÁS RÁBÖKÉSKOR */
   button, .btn, .nav-link, .card, .badge, .dropdown-item, .app-nav-item {
     user-select: none;
     touch-action: manipulation;
-    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, box-shadow 0.15s ease !important;
-  }
-
-  button:active, .btn:active, .card:active, .badge:active {
-    transform: scale(0.97) !important;
+    transform: none !important; /* Rugózás és ugrálás teljes letiltása */
+    transition: background-color 0.15s ease, color 0.15s ease !important;
   }
 
   /* Modern App Form elemek */
@@ -75,15 +72,15 @@
   }
 
   input:focus, textarea:focus, select:focus, .form-control:focus, .form-select:focus {
-    border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
   }
 
   /* App Shell Kártyák és Konténerek */
   .card { 
     border: 1px solid rgba(226, 232, 240, 0.9) !important; 
-    border-radius: 20px !important; 
-    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02) !important; 
+    border-radius: 18px !important; 
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important; 
     margin-bottom: 20px;
     background: #ffffff !important;
   }
@@ -120,11 +117,9 @@
     display: flex; 
     flex-direction: column; 
     justify-content: space-between; 
-    transition: all 0.2s ease; 
   }
-  .calendar-day:hover { box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); border-color: #cbd5e1; }
   .calendar-day.other-month { background-color: #f8fafc; color: #cbd5e1; opacity: 0.5; }
-  .calendar-day.today { border: 2px solid #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.25); background-color: #eff6ff; }
+  .calendar-day.today { border: 2px solid #2563eb; background-color: #eff6ff; }
   .calendar-day-num { font-weight: 800; font-size: 0.85rem; margin-left: 2px; }
   .calendar-absences-container { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
   .absence-badge { font-size: 0.65rem; padding: 2px 4px; border-radius: 5px; font-weight: 800; text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -152,7 +147,7 @@
     font-size: 0.72rem !important;
     font-weight: 700 !important;
     border-radius: 20px !important;
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05) !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
     margin: 0 !important;
     white-space: nowrap !important;
   }
@@ -172,7 +167,6 @@
     border: 1px solid #e2e8f0 !important;
     border-radius: 16px !important;
     background-color: #ffffff !important;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02) !important;
   }
 
   .timeline-table {
@@ -335,10 +329,58 @@
   }
 
   /* =========================================================
-     5. SPECIFIKUS MOBIL JAVÍTÁSOK ÉS NATIVE APP KÁRTYÁK (768px ALATT)
+     5. ALSÓ NAVIGÁCIÓ (BOTTOM BAR) ÉS MOBIL NATIVE ELRENDEZÉS
      ========================================================= */
   @media screen and (max-width: 768px) {
-    /* Fejlécek és szűrők rugalmas egymás alá rendezése */
+    /* Felső webes menü elrejtése mobilon */
+    .navbar { display: none !important; }
+
+    /* Margó az alsó rögzített menü miatt */
+    body {
+      padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
+    }
+
+    /* Fixed Alsó Navigációs Sáv (Bottom Navigation Bar) */
+    .app-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(62px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1040;
+      box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
+    }
+
+    .app-nav-item {
+      color: #64748b;
+      text-decoration: none !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      gap: 3px;
+      flex: 1;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .app-nav-item i {
+      font-size: 1.25rem;
+    }
+
+    .app-nav-item.active {
+      color: #2563eb !important;
+    }
+
+    /* Fejlécek és szűrők kényelmes egymás alá rendezése */
     #view-overtime-approval .d-flex.justify-content-between,
     .tab-content > .d-flex.justify-content-between,
     .card-body > .d-flex.justify-content-between,
@@ -354,7 +396,7 @@
       border-radius: 12px !important;
     }
 
-    /* Havi grid naptár kompakttá tétele */
+    /* Havi grid naptár sűrítése */
     .calendar-day {
       min-height: 50px !important;
       padding: 3px !important;
@@ -436,6 +478,13 @@
     }
   }
 
+  /* Asztali gépen elrejtjük az alsó sávot */
+  @media screen and (min-width: 769px) {
+    .app-bottom-nav {
+      display: none !important;
+    }
+  }
+
   .btn-group, select, .form-select, .table-responsive {
     max-width: 100% !important;
   }
@@ -443,7 +492,7 @@
 </head>
 <body>
 
-<!-- NAVIGÁCIÓS SÁV -->
+<!-- ASZTALI NAVIGÁCIÓS SÁV (Mobilon automatikusan rejtve) -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
   <div class="container">
     <a class="navbar-brand fw-bold" onclick="switchView('dashboard')" style="cursor: pointer;">🌴 Szabadság Kezelő Portal</a>
@@ -927,7 +976,7 @@
 
       <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-          <div class="table-responsive" style="max-height: 70vh; overflow-y: auto; overflow-x: auto;">
+          <div class="table-responsive payroll-scroll" style="max-height: 70vh; overflow-y: auto; overflow-x: auto;">
             <table class="table table-bordered table-hover align-middle text-center mb-0" style="white-space: nowrap; font-size: 0.85rem;">
               <thead class="table-light sticky-top" style="z-index: 10;" id="payrollReportTableHeader">
                 <!-- JavaScript generálja a dinamikus fejlécet -->
@@ -1015,8 +1064,6 @@
       </div>
       <div class="modal-body">
         <form id="addUserForm" onsubmit="saveNewUser(event)">
-          
-          <!-- Személyes és Szervezeti adatok -->
           <div class="row g-2 mb-3">
             <div class="col-md-6">
               <label class="form-label small fw-bold">Teljes Név <span class="text-danger">*</span></label>
@@ -1393,6 +1440,34 @@
   </div>
 </div>
 
+<!-- RÖGZÍTETT ALSÓ NAVIGÁCIÓS SÁV (MOBIL APP FEEL) -->
+<nav class="app-bottom-nav">
+  <div class="app-nav-item active" id="mbTabDashboard" onclick="switchMobileTab('dashboard', this)">
+    <i class="bi bi-house-door"></i>
+    <span>Pult</span>
+  </div>
+  <div class="app-nav-item" id="mbTabCalendar" onclick="switchMobileTab('calendar', this)">
+    <i class="bi bi-calendar3"></i>
+    <span>Jelenlét</span>
+  </div>
+  <div class="app-nav-item hidden" id="mbTabTeam" onclick="switchMobileTab('team', this)">
+    <i class="bi bi-people"></i>
+    <span>Csapat</span>
+  </div>
+  <div class="app-nav-item hidden" id="mbTabOvertime" onclick="switchMobileTab('overtime-approval', this)">
+    <i class="bi bi-check2-square"></i>
+    <span>Bírálat</span>
+  </div>
+  <div class="app-nav-item hidden" id="mbTabPayroll" onclick="switchMobileTab('payroll', this)">
+    <i class="bi bi-file-earmark-spreadsheet"></i>
+    <span>Bérfejtés</span>
+  </div>
+  <div class="app-nav-item hidden" id="mbTabAdmin" onclick="switchMobileTab('admin', this)">
+    <i class="bi bi-gear"></i>
+    <span>Admin</span>
+  </div>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -1615,7 +1690,6 @@
 
       const email = session.user.email.toLowerCase().trim();
 
-      // Profilok lekérése a bejelentkezett e-mail alapján
       const { data: profiles, error: profileError } = await supabaseClient
         .from('profiles')
         .select('*');
@@ -1653,7 +1727,6 @@
       document.getElementById('uiAlapKeret').innerText = (profile.eves_keret || 0) + " nap";
       document.getElementById('uiHoKeret').innerText = profile.ho_keret || 4;
 
-      // Adatok lekérése tiszta .ilike szűréssel
       const [reqRes, otRes, decRes] = await Promise.all([
         supabaseClient.from('leave_requests').select('*').ilike('user_email', email),
         supabaseClient.from('work_logs').select('*').ilike('user_email', email),
@@ -1667,18 +1740,17 @@
         decRes.data || []
       );
 
-      // CSÚSZTATHATÓ EGYENLEG FORMATÁLÁSA ÉS SZÍNEZÉSE
       const csusztathatoEl = document.getElementById('uiCsusztathato');
       if (csusztathatoEl) {
         const balance = parseFloat(otStats.osszesCsusztathato) || 0;
         csusztathatoEl.innerText = balance.toFixed(1) + " óra";
 
         if (balance < 0) {
-          csusztathatoEl.className = "fw-bold text-danger"; // Piros kiemelés mínusz esetén
+          csusztathatoEl.className = "fw-bold text-danger";
         } else if (balance > 0) {
-          csusztathatoEl.className = "fw-bold text-success"; // Zöld kiemelés plusz esetén
+          csusztathatoEl.className = "fw-bold text-success";
         } else {
-          csusztathatoEl.className = "fw-bold text-primary"; // Alapértelmezett kék/sötét
+          csusztathatoEl.className = "fw-bold text-primary";
         }
       }
 
@@ -1694,7 +1766,7 @@
       if (typeof showToast === 'function') showToast("Hiba a betöltéskor: " + e.message, "danger");
       if (typeof hideSpinner === 'function') hideSpinner();
     }
-}
+  }
 
   function updateTabVisibility(profile) {
     if (!profile) return;
@@ -1715,6 +1787,7 @@
     const canSeeOvertime = ['manager', 'leader', 'csoportvezeto', 'admin', 'boss', 'hr'].includes(cleanRole) || rawPos.includes('hr');
     const canSeePayroll = ['admin', 'boss', 'hr'].includes(cleanRole) || rawPos.includes('hr');
 
+    // Asztali menüpontok frissítése
     const navTeam = document.getElementById('nav-team');
     if (navTeam) navTeam.classList.toggle('hidden', !canSeeTeam);
 
@@ -1726,6 +1799,19 @@
 
     const navPayroll = document.getElementById('nav-payroll');
     if (navPayroll) navPayroll.classList.toggle('hidden', !canSeePayroll);
+
+    // Mobil Alsó Navigáció elemeinek frissítése
+    const mbTeam = document.getElementById('mbTabTeam');
+    if (mbTeam) mbTeam.classList.toggle('hidden', !canSeeTeam);
+
+    const mbAdmin = document.getElementById('mbTabAdmin');
+    if (mbAdmin) mbAdmin.classList.toggle('hidden', !canSeeAdmin);
+
+    const mbOvertime = document.getElementById('mbTabOvertime');
+    if (mbOvertime) mbOvertime.classList.toggle('hidden', !canSeeOvertime);
+
+    const mbPayroll = document.getElementById('mbTabPayroll');
+    if (mbPayroll) mbPayroll.classList.toggle('hidden', !canSeePayroll);
   }
 
   async function loadMyRequests() {
@@ -1839,20 +1925,17 @@
     }).join('');
   }
 
-  // Globális változó a megszakított kérelem adatainak tárolására
-let pendingNegativeRequest = null;
+  let pendingNegativeRequest = null;
 
-// Segédfüggvény a csúsztatás óráinak kiszámításához a felületen megadott időből
-function calculateRequestedHours(kezdoIdo, vegIdo) {
-  if (!kezdoIdo || !vegIdo) return 0;
-  const [h1, m1] = kezdoIdo.split(':').map(Number);
-  const [h2, m2] = vegIdo.split(':').map(Number);
-  const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-  return diffMins > 0 ? (diffMins / 60) : 0;
-}
+  function calculateRequestedHours(kezdoIdo, vegIdo) {
+    if (!kezdoIdo || !vegIdo) return 0;
+    const [h1, m1] = kezdoIdo.split(':').map(Number);
+    const [h2, m2] = vegIdo.split(':').map(Number);
+    const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+    return diffMins > 0 ? (diffMins / 60) : 0;
+  }
 
-
-async function handleFormSubmit(e) {
+  async function handleFormSubmit(e) {
     if (e) e.preventDefault();
     const btn = document.getElementById('submitBtn');
     if (btn) btn.disabled = true;
@@ -1867,7 +1950,6 @@ async function handleFormSubmit(e) {
     const helyettes = document.getElementById('reqHelyettes')?.value || '';
     const rendkivuli = document.getElementById('rendkivuliOk')?.value || '';
 
-    // 15 napos szabály ellenőrzése
     if (tipus === 'Szabadság' || tipus === 'Tavalyi szabadság') {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -1884,18 +1966,14 @@ async function handleFormSubmit(e) {
         }
     }
 
-    // Csúsztatott órák kiszámítása
     const requestedHours = tipus === 'Csúsztatás' ? calculateRequestedHours(kezdoIdo, vegIdo) : null;
 
-    // MÍNUSZOS CSÚSZTATÁS ELLENŐRZÉSE
     if (tipus === 'Csúsztatás') {
-        // Egyenleg kiolvasása a felületről (uiCsusztathato vagy bankedHoursDisplay)
         const balanceEl = document.getElementById('uiCsusztathato') || document.getElementById('bankedHoursDisplay');
         const currentBalanceText = balanceEl ? balanceEl.innerText : '0';
         const currentBalance = parseFloat(currentBalanceText) || 0;
 
         if (requestedHours > currentBalance) {
-            // Mentjük az adatokat az oraszam mezővel együtt
             pendingNegativeRequest = {
                 user_email: currentUserProfile.email,
                 nev: currentUserProfile.nev,
@@ -1904,13 +1982,12 @@ async function handleFormSubmit(e) {
                 veg_datum: vegDatum,
                 kezdo_ido: kezdoIdo,
                 veg_ido: vegIdo,
-                oraszam: requestedHours, // Beküldendő óraszám
+                oraszam: requestedHours,
                 helyettes_email: helyettes,
                 rendkivuli: rendkivuli,
                 megjegyzes: megjegyzes 
             };
 
-            // Értékek beállítása a Modalon
             const reqDisplay = document.getElementById('negReqHours');
             const availDisplay = document.getElementById('negAvailHours');
             if (reqDisplay) reqDisplay.innerText = requestedHours.toFixed(1);
@@ -1919,7 +1996,6 @@ async function handleFormSubmit(e) {
             const reasonInput = document.getElementById('negativeBalanceReason');
             if (reasonInput) reasonInput.value = "";
             
-            // Modal megjelenítése
             const modalEl = document.getElementById('negativeBalanceModal');
             if (modalEl) {
                 const modal = new bootstrap.Modal(modalEl);
@@ -1928,11 +2004,10 @@ async function handleFormSubmit(e) {
                 showToast("Hiányzik a mínuszos indoklás ablak (HTML)!", "danger");
             }
             if (btn) btn.disabled = false;
-            return; // Megszakítjuk a mentést az indoklásig
+            return;
         }
     }
 
-    // Normál mentés, ha van elég keret
     await finalizeAndSaveRequest({
         user_email: currentUserProfile.email,
         nev: currentUserProfile.nev,
@@ -1941,15 +2016,14 @@ async function handleFormSubmit(e) {
         veg_datum: vegDatum,
         kezdo_ido: kezdoIdo,
         veg_ido: vegIdo,
-        oraszam: requestedHours, // Beküldendő óraszám
+        oraszam: requestedHours,
         helyettes_email: helyettes,
         rendkivuli: rendkivuli,
         megjegyzes: megjegyzes
     }, btn);
-}
+  }
 
-// Ezt hívja meg a "Kérelem Beküldése" gomb a felugró Modalon
-async function submitNegativeRequest() {
+  async function submitNegativeRequest() {
     const reasonInput = document.getElementById('negativeBalanceReason');
     const reasonText = reasonInput.value.trim();
 
@@ -1964,23 +2038,18 @@ async function submitNegativeRequest() {
         return;
     }
 
-    // Összefűzzük a meglévő megjegyzést az új mínuszos indoklással
     const originalMegjegyzes = pendingNegativeRequest.megjegyzes || "";
     pendingNegativeRequest.megjegyzes = `[MÍNUSZOS EGYENLEG INDOKLÁSA]: ${reasonText}` + (originalMegjegyzes ? `\n\n[Egyéb megjegyzés]: ${originalMegjegyzes}` : "");
 
-    // Modal bezárása
     const modalEl = document.getElementById('negativeBalanceModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     if (modal) modal.hide();
 
-    // Mentés végrehajtása
     await finalizeAndSaveRequest(pendingNegativeRequest, document.getElementById('submitBtn'));
-    pendingNegativeRequest = null; // Törlés
-}
+    pendingNegativeRequest = null;
+  }
 
-
-// Tényleges adatbázis mentés és email küldés
-async function finalizeAndSaveRequest(reqData, btn) {
+  async function finalizeAndSaveRequest(reqData, btn) {
     if (btn) btn.disabled = true;
 
     const autoApproved = ['Betegszabadság', 'Home office', 'Tréning', 'Ügyfél'].includes(reqData.tipus);
@@ -2026,7 +2095,7 @@ async function finalizeAndSaveRequest(reqData, btn) {
     } finally {
       if (btn) btn.disabled = false;
     }
-}
+  }
 
   function check15DayRule() {
     const tipusEl = document.getElementById('tipus');
@@ -2235,29 +2304,28 @@ async function finalizeAndSaveRequest(reqData, btn) {
   }
 
   async function loadAdminDashboard() {
-  try {
-    // Mentett rendszerbeállítások visszatöltése a mezőkbe
-    const savedHo = localStorage.getItem('cfgGlobalHoLimit');
-    const savedMinDays = localStorage.getItem('cfgMinAdvanceDays');
-    
-    if (savedHo && document.getElementById('cfgGlobalHoLimit')) {
-      document.getElementById('cfgGlobalHoLimit').value = savedHo;
+    try {
+      const savedHo = localStorage.getItem('cfgGlobalHoLimit');
+      const savedMinDays = localStorage.getItem('cfgMinAdvanceDays');
+      
+      if (savedHo && document.getElementById('cfgGlobalHoLimit')) {
+        document.getElementById('cfgGlobalHoLimit').value = savedHo;
+      }
+      if (savedMinDays && document.getElementById('cfgMinAdvanceDays')) {
+        document.getElementById('cfgMinAdvanceDays').value = savedMinDays;
+      }
+
+      const { data: users, error } = await supabaseClient.from('profiles').select('*').order('nev', { ascending: true });
+      if (error) throw error;
+
+      adminUsersCache = users || [];
+      renderAdminUsersTable(adminUsersCache);
+      populateAdminGroupFilter(adminUsersCache);
+
+    } catch (e) {
+      showToast("Admin adatok betöltési hibája: " + e.message, "danger");
     }
-    if (savedMinDays && document.getElementById('cfgMinAdvanceDays')) {
-      document.getElementById('cfgMinAdvanceDays').value = savedMinDays;
-    }
-
-    const { data: users, error } = await supabaseClient.from('profiles').select('*').order('nev', { ascending: true });
-    if (error) throw error;
-
-    adminUsersCache = users || [];
-    renderAdminUsersTable(adminUsersCache);
-    populateAdminGroupFilter(adminUsersCache);
-
-  } catch (e) {
-    showToast("Admin adatok betöltési hibája: " + e.message, "danger");
   }
-}
 
   function renderAdminUsersTable(users) {
     const tbody = document.getElementById('adminUsersTableBody');
@@ -2294,89 +2362,87 @@ async function finalizeAndSaveRequest(reqData, btn) {
   }
 
   function openEditUserModal(email) {
-  const user = adminUsersCache.find(u => normalizeStr(u.email) === normalizeStr(email));
-  if (!user) {
-    showToast("A munkatárs adatai nem találhatók!", "danger");
-    return;
-  }
+    const user = adminUsersCache.find(u => normalizeStr(u.email) === normalizeStr(email));
+    if (!user) {
+      showToast("A munkatárs adatai nem találhatók!", "danger");
+      return;
+    }
 
-  document.getElementById('editUserId').value = user.id;
-  document.getElementById('editOriginalEmail').value = user.email;
-  document.getElementById('editUserName').value = user.nev || '';
-  document.getElementById('editUserEmail').value = user.email || '';
-  document.getElementById('editUserRole').value = (user.jogosultsag || user.role || 'user').toLowerCase().trim();
-  document.getElementById('editUserGroup').value = user.csoport || '';
-  document.getElementById('editUserPozicio').value = user.pozicio || '';
-  
-  document.getElementById('editUserEvesKeret').value = user.eves_keret || 20;
-  document.getElementById('editUserTavalyiKeret').value = user.tavalyi_keret || 0;
-  document.getElementById('editUserHoKeret').value = user.ho_keret || 4;
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editOriginalEmail').value = user.email;
+    document.getElementById('editUserName').value = user.nev || '';
+    document.getElementById('editUserEmail').value = user.email || '';
+    document.getElementById('editUserRole').value = (user.jogosultsag || user.role || 'user').toLowerCase().trim();
+    document.getElementById('editUserGroup').value = user.csoport || '';
+    document.getElementById('editUserPozicio').value = user.pozicio || '';
+    
+    document.getElementById('editUserEvesKeret').value = user.eves_keret || 20;
+    document.getElementById('editUserTavalyiKeret').value = user.tavalyi_keret || 0;
+    document.getElementById('editUserHoKeret').value = user.ho_keret || 4;
 
-  // Az adatbázis pontos oszlopneveinek betöltése (statusz, belepett, kilepett)
-  document.getElementById('editUserStatus').value = (user.statusz || 'aktív').toLowerCase().trim();
-  document.getElementById('editUserBelepett').value = user.belepett || '';
-  document.getElementById('editUserKilepett').value = user.kilepett || '';
+    document.getElementById('editUserStatus').value = (user.statusz || 'aktív').toLowerCase().trim();
+    document.getElementById('editUserBelepett').value = user.belepett || '';
+    document.getElementById('editUserKilepett').value = user.kilepett || '';
 
-  document.getElementById('editUserCsvEmail').value = user.csoportvezeto_email || '';
-  document.getElementById('editUserLeaderEmail').value = user.leader_email || '';
-  document.getElementById('editUserManagerEmail').value = user.manager_email || '';
-  document.getElementById('editUserBossEmail').value = user.boss_email || '';
-
-  const modalEl = document.getElementById('editUserModal');
-  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-  modal.show();
-}
-
-async function saveEditUser(event) {
-  event.preventDefault();
-  const btn = document.getElementById('saveEditUserBtn');
-  btn.disabled = true;
-
-  const userId = document.getElementById('editUserId').value;
-
-  const belepettVal = document.getElementById('editUserBelepett').value;
-  const kilepettVal = document.getElementById('editUserKilepett').value;
-
-  const updatedData = {
-    nev: document.getElementById('editUserName').value.trim(),
-    jogosultsag: document.getElementById('editUserRole').value,
-    csoport: document.getElementById('editUserGroup').value.trim(),
-    pozicio: document.getElementById('editUserPozicio').value.trim(),
-    eves_keret: Number(document.getElementById('editUserEvesKeret').value) || 0,
-    tavalyi_keret: Number(document.getElementById('editUserTavalyiKeret').value) || 0,
-    ho_keret: Number(document.getElementById('editUserHoKeret').value) || 0,
-    statusz: document.getElementById('editUserStatus').value,
-    belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
-    kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
-    csoportvezeto_email: document.getElementById('editUserCsvEmail').value.trim().toLowerCase(),
-    leader_email: document.getElementById('editUserLeaderEmail').value.trim().toLowerCase(),
-    manager_email: document.getElementById('editUserManagerEmail').value.trim().toLowerCase(),
-    boss_email: document.getElementById('editUserBossEmail').value.trim().toLowerCase()
-  };
-
-  try {
-    const { error } = await supabaseClient
-      .from('profiles')
-      .update(updatedData)
-      .eq('id', userId);
-
-    if (error) throw error;
-
-    showToast("Munkatárs adatai és státusza sikeresen frissítve!", "success");
+    document.getElementById('editUserCsvEmail').value = user.csoportvezeto_email || '';
+    document.getElementById('editUserLeaderEmail').value = user.leader_email || '';
+    document.getElementById('editUserManagerEmail').value = user.manager_email || '';
+    document.getElementById('editUserBossEmail').value = user.boss_email || '';
 
     const modalEl = document.getElementById('editUserModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) modal.hide();
-
-    await loadAdminDashboard();
-
-  } catch (err) {
-    showToast("Hiba a mentés során: " + err.message, "danger");
-  } finally {
-    btn.disabled = false;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
   }
-}
 
+  async function saveEditUser(event) {
+    event.preventDefault();
+    const btn = document.getElementById('saveEditUserBtn');
+    btn.disabled = true;
+
+    const userId = document.getElementById('editUserId').value;
+
+    const belepettVal = document.getElementById('editUserBelepett').value;
+    const kilepettVal = document.getElementById('editUserKilepett').value;
+
+    const updatedData = {
+      nev: document.getElementById('editUserName').value.trim(),
+      jogosultsag: document.getElementById('editUserRole').value,
+      csoport: document.getElementById('editUserGroup').value.trim(),
+      pozicio: document.getElementById('editUserPozicio').value.trim(),
+      eves_keret: Number(document.getElementById('editUserEvesKeret').value) || 0,
+      tavalyi_keret: Number(document.getElementById('editUserTavalyiKeret').value) || 0,
+      ho_keret: Number(document.getElementById('editUserHoKeret').value) || 0,
+      statusz: document.getElementById('editUserStatus').value,
+      belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
+      kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
+      csoportvezeto_email: document.getElementById('editUserCsvEmail').value.trim().toLowerCase(),
+      leader_email: document.getElementById('editUserLeaderEmail').value.trim().toLowerCase(),
+      manager_email: document.getElementById('editUserManagerEmail').value.trim().toLowerCase(),
+      boss_email: document.getElementById('editUserBossEmail').value.trim().toLowerCase()
+    };
+
+    try {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update(updatedData)
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      showToast("Munkatárs adatai és státusza sikeresen frissítve!", "success");
+
+      const modalEl = document.getElementById('editUserModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+
+      await loadAdminDashboard();
+
+    } catch (err) {
+      showToast("Hiba a mentés során: " + err.message, "danger");
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
   function filterAdminUsers() {
     const searchVal = (document.getElementById('adminUserSearch')?.value || '').toLowerCase().trim();
@@ -2407,84 +2473,82 @@ async function saveEditUser(event) {
   }
 
   async function saveNewUser(event) {
-  event.preventDefault();
-  const btn = document.getElementById('saveNewUserBtn');
-  if (btn) btn.disabled = true;
+    event.preventDefault();
+    const btn = document.getElementById('saveNewUserBtn');
+    if (btn) btn.disabled = true;
 
-  const belepettVal = document.getElementById('addUserBelepett').value;
-  const kilepettVal = document.getElementById('addUserKilepett').value;
+    const belepettVal = document.getElementById('addUserBelepett').value;
+    const kilepettVal = document.getElementById('addUserKilepett').value;
 
-  const newUserData = {
-    nev: document.getElementById('addUserName').value.trim(),
-    email: document.getElementById('addUserEmail').value.trim().toLowerCase(),
-    jogosultsag: document.getElementById('addUserRole').value,
-    csoport: document.getElementById('addUserGroup').value.trim(),
-    pozicio: document.getElementById('addUserPozicio').value.trim(),
-    eves_keret: Number(document.getElementById('addUserEvesKeret').value) || 20,
-    tavalyi_keret: Number(document.getElementById('addUserTavalyiKeret').value) || 0,
-    ho_keret: Number(document.getElementById('addUserHoKeret').value) || 4,
-    statusz: document.getElementById('addUserStatus').value,
-    belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
-    kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
-    csoportvezeto_email: document.getElementById('addUserCsvEmail').value.trim().toLowerCase(),
-    leader_email: document.getElementById('addUserLeaderEmail').value.trim().toLowerCase(),
-    manager_email: document.getElementById('addUserManagerEmail').value.trim().toLowerCase(),
-    boss_email: document.getElementById('addUserBossEmail').value.trim().toLowerCase()
-  };
+    const newUserData = {
+      nev: document.getElementById('addUserName').value.trim(),
+      email: document.getElementById('addUserEmail').value.trim().toLowerCase(),
+      jogosultsag: document.getElementById('addUserRole').value,
+      csoport: document.getElementById('addUserGroup').value.trim(),
+      pozicio: document.getElementById('addUserPozicio').value.trim(),
+      eves_keret: Number(document.getElementById('addUserEvesKeret').value) || 20,
+      tavalyi_keret: Number(document.getElementById('addUserTavalyiKeret').value) || 0,
+      ho_keret: Number(document.getElementById('addUserHoKeret').value) || 4,
+      statusz: document.getElementById('addUserStatus').value,
+      belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
+      kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
+      csoportvezeto_email: document.getElementById('addUserCsvEmail').value.trim().toLowerCase(),
+      leader_email: document.getElementById('addUserLeaderEmail').value.trim().toLowerCase(),
+      manager_email: document.getElementById('addUserManagerEmail').value.trim().toLowerCase(),
+      boss_email: document.getElementById('addUserBossEmail').value.trim().toLowerCase()
+    };
 
-  try {
-    const { error } = await supabaseClient
-      .from('profiles')
-      .insert([newUserData]);
+    try {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .insert([newUserData]);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    showToast("Új munkatárs sikeresen létrehozva!", "success");
+      showToast("Új munkatárs sikeresen létrehozva!", "success");
 
-    const modalEl = document.getElementById('addUserModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) modal.hide();
+      const modalEl = document.getElementById('addUserModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
 
-    await loadAdminDashboard();
+      await loadAdminDashboard();
 
-  } catch (err) {
-    showToast("Hiba a létrehozás során: " + err.message, "danger");
-  } finally {
-    if (btn) btn.disabled = false;
+    } catch (err) {
+      showToast("Hiba a létrehozás során: " + err.message, "danger");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
-}
+
   async function saveAdminSettings(event) {
-  event.preventDefault();
-  const btn = event.target.querySelector('button[type="submit"]');
-  if (btn) btn.disabled = true;
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
 
-  const newHoLimit = Number(document.getElementById('cfgGlobalHoLimit').value) || 4;
-  const minAdvanceDays = Number(document.getElementById('cfgMinAdvanceDays').value) || 15;
+    const newHoLimit = Number(document.getElementById('cfgGlobalHoLimit').value) || 4;
+    const minAdvanceDays = Number(document.getElementById('cfgMinAdvanceDays').value) || 15;
 
-  // Beállítások elmentése a böngésző helyi tárolójába
-  localStorage.setItem('cfgGlobalHoLimit', newHoLimit);
-  localStorage.setItem('cfgMinAdvanceDays', minAdvanceDays);
+    localStorage.setItem('cfgGlobalHoLimit', newHoLimit);
+    localStorage.setItem('cfgMinAdvanceDays', minAdvanceDays);
 
-  try {
-    // Tömeges frissítés a profiles táblában minden munkatársra
-    const { error } = await supabaseClient
-      .from('profiles')
-      .update({ ho_keret: newHoLimit })
-      .not('email', 'is', null);
+    try {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ ho_keret: newHoLimit })
+        .not('email', 'is', null);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    showToast(`Rendszerbeállítások elmentve! Az új alapértelmezett HO keret (${newHoLimit} nap) frissítve lett minden munkatársnál.`, "success");
+      showToast(`Rendszerbeállítások elmentve! Az új alapértelmezett HO keret (${newHoLimit} nap) frissítve lett minden munkatársnál.`, "success");
 
-    // Az Adminisztrációs táblázat újratöltése a frissült értékekkel
-    await loadAdminDashboard();
+      await loadAdminDashboard();
 
-  } catch (err) {
-    showToast("Hiba a rendszerbeállítások mentésekor: " + err.message, "danger");
-  } finally {
-    if (btn) btn.disabled = false;
+    } catch (err) {
+      showToast("Hiba a rendszerbeállítások mentésekor: " + err.message, "danger");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
-}
 
   async function loadGlobalTimeline() {
     const label = document.getElementById('globalMonthLabel');
@@ -2758,10 +2822,8 @@ async function saveEditUser(event) {
     const sEmail = normalizeStr(submitter.email);
     const tEmail = normalizeStr(target.email);
     
-    // 1. Saját magának SENKI sem küldhet kifizetést
     if (sEmail === tEmail) return false;
 
-    // A rendszerjogosultságokat vizsgáljuk
     const sRole = normalizeStr(submitter.jogosultsag || submitter.role);
     const sPos = normalizeStr(submitter.pozicio);
     const tRole = normalizeStr(target.jogosultsag || target.role);
@@ -2779,22 +2841,11 @@ async function saveEditUser(event) {
                     : tRole.includes('manag') ? 'manager'
                     : 'user';
 
-    // Admin bárkinek indíthat
     if (cleanSRole === 'admin') return true;
-
-    // Boss csak Managereknek indíthat
     if (cleanSRole === 'boss') return cleanTRole === 'manager';
-
-    // HR Vezető csak Managereknek indíthat
     if (cleanSRole === 'hr') return cleanTRole === 'manager';
-
-    // Manager CSAK a Leader-eknek indíthat (Csoportvezetőknek NEM!)
     if (cleanSRole === 'manager') return cleanTRole === 'leader';
-
-    // Leader a Csoportvezetőknek és User-eknek indíthat
     if (cleanSRole === 'leader') return ['csoportvezeto', 'user'].includes(cleanTRole);
-
-    // Csoportvezető a User-eknek indíthat
     if (cleanSRole === 'csoportvezeto') return cleanTRole === 'user';
 
     return false;
@@ -2851,7 +2902,6 @@ async function saveEditUser(event) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1. MUNKALAPOK CSOPORTOSÍTÁSA ÉS ÖSSZEGZÉSE NAPOK SZERINT
     const dailyLogsMap = {};
 
     (overtimeLogs || []).forEach(o => {
@@ -2890,7 +2940,6 @@ async function saveEditUser(event) {
     let nightOvertimes = [];
     let lejartTulora = 0;
 
-    // 2. NAPI TÚLÓRÁK KISZÁMÍTÁSA A NAPI ÖSSZÓRASZÁMBÓL (NAPI LIMIT = 8 ÓRA)
     Object.values(dailyLogsMap).forEach(dayObj => {
       const entryDate = new Date(dayObj.datum + 'T12:00:00');
       const dayOfWeek = entryDate.getDay();
@@ -2901,10 +2950,8 @@ async function saveEditUser(event) {
 
       let overtimeHours = 0;
       if (isNightEvent || isWeekendEvent) {
-        // Hétvégén vagy éjszakai eseményen a teljes ledolgozott idő túlóra
         overtimeHours = dayObj.totalHours;
       } else {
-        // Hétköznap csak a 8 óra feletti rész számít túlórának
         overtimeHours = Math.max(0, dayObj.totalHours - 8);
       }
 
@@ -2938,7 +2985,6 @@ async function saveEditUser(event) {
       return remaining;
     };
 
-    // 3. JÓVÁHAGYOTT CSÚSZTATÁSOK LEVONÁSA
     let totalUsedHours = 0;
     (leaveRequests || []).forEach(r => {
       const reqEmail = normalizeStr(r.user_email);
@@ -2978,7 +3024,6 @@ async function saveEditUser(event) {
       if (uncoveredHours > 0) uncoveredHours = deductFrom(nightOvertimes, uncoveredHours);
     }
 
-    // 4. KIFIZETÉSEK LEVONÁSA
     (overtimeDecisions || []).forEach(d => {
       const emailMatch = normalizeStr(d.user_email || d.munkatars_email) === targetEmail;
       const rawStatus = normalizeStr(d.status);
@@ -3021,7 +3066,7 @@ async function saveEditUser(event) {
       lejartTulora: parseFloat(lejartTulora.toFixed(2)),
       osszesCsusztathato: parseFloat(osszesCsusztathato.toFixed(2))
     };
-}
+  }
 
   async function loadTeamBalances() {
     const tbody = document.getElementById('teamBalancesTableBody');
@@ -3045,7 +3090,6 @@ async function saveEditUser(event) {
 
       let teamProfiles = profiles || [];
 
-      // LÁTHATÓSÁGI SZŰRÉS: Az Admin kivételével mindenki csak a hozzá tartozókat látja
       if (!isAdmin) {
         teamProfiles = teamProfiles.filter(emp => canSubmitPayoutFor(currentUserProfile, emp));
       }
@@ -3056,7 +3100,6 @@ async function saveEditUser(event) {
         const emailClean = String(emp.email || '').trim().toLowerCase();
         if (!emailClean) return Promise.resolve({ requests: [], overtimes: [], decisions: [] });
 
-        // Tiszta lekérdezések extra idézőjelek nélkül
         return Promise.all([
           supabaseClient.from('leave_requests').select('*').ilike('user_email', emailClean),
           supabaseClient.from('work_logs').select('*').ilike('user_email', emailClean),
@@ -3581,6 +3624,9 @@ async function saveEditUser(event) {
       target.classList.remove('d-none');
     }
 
+    // Alsó mobil menüsáv szinkronizálása az asztali nézetváltásokkal
+    syncBottomNavActiveState(viewName);
+
     if (viewName === 'team') loadPendingApprovals();
     if (viewName === 'calendar') loadGlobalTimeline();
     if (viewName === 'admin') loadAdminDashboard();
@@ -3588,126 +3634,139 @@ async function saveEditUser(event) {
     if (viewName === 'overtime-approval') loadOvertimeApprovals();
   }
 
-  function handleTypeChange() {
-  const tipus = document.getElementById('tipus')?.value;
-  const timeContainer = document.getElementById('timeContainer');
-  const vegDatumContainer = document.getElementById('vegDatumContainer');
-  const alertEl = document.getElementById('compensatoryLimitAlert');
-
-  if (tipus === 'Csúsztatás') {
-    if (timeContainer) timeContainer.classList.remove('hidden');
-    if (vegDatumContainer) vegDatumContainer.classList.add('hidden'); // Vég dátum elrejtése
-  } else {
-    if (timeContainer) timeContainer.classList.add('hidden');
-    if (vegDatumContainer) vegDatumContainer.classList.remove('hidden'); // Vég dátum mutatása
-    if (alertEl) alertEl.classList.add('hidden');
+  function switchMobileTab(viewId, element) {
+    document.querySelectorAll('.app-nav-item').forEach(item => item.classList.remove('active'));
+    if (element) element.classList.add('active');
+    switchView(viewId);
   }
 
-  // Újraellenőrizzük a form érvényességét
-  validateDates();
-}
-
-function validateDates() {
-  const tipus = document.getElementById('tipus')?.value;
-  const kezdoDatum = document.getElementById('kezdoDatum')?.value;
-  const submitBtn = document.getElementById('submitBtn');
-
-  if (!submitBtn) return;
-
-  // Ha a típus vagy a kezdő dátum hiányzik, letiltjuk a gombot
-  if (!tipus || !kezdoDatum) {
-    submitBtn.disabled = true;
-    return;
-  }
-
-  // Csúsztatás esetén a Vég Dátumot egyenlővé tesszük a Kezdővel a háttérben
-  if (tipus === 'Csúsztatás') {
-    const vegDatumInput = document.getElementById('vegDatum');
-    if (vegDatumInput) vegDatumInput.value = kezdoDatum;
+  function syncBottomNavActiveState(viewName) {
+    document.querySelectorAll('.app-nav-item').forEach(item => item.classList.remove('active'));
     
-    // Ellenőrizzük, hogy az időpontok ki vannak-e töltve
-    const kIdo = document.getElementById('kezdoIdo')?.value;
-    const vIdo = document.getElementById('vegIdo')?.value;
-    if (!kIdo || !vIdo) {
-      submitBtn.disabled = true;
-      return;
+    const navMap = {
+      'dashboard': 'mbTabDashboard',
+      'calendar': 'mbTabCalendar',
+      'team': 'mbTabTeam',
+      'overtime-approval': 'mbTabOvertime',
+      'payroll': 'mbTabPayroll',
+      'admin': 'mbTabAdmin'
+    };
+
+    const targetId = navMap[viewName];
+    if (targetId) {
+      const activeEl = document.getElementById(targetId);
+      if (activeEl) activeEl.classList.add('active');
     }
   }
 
-  // 15 napos rendkívüli szabály ellenőrzése (CSAK szabadság esetén)
-  const rendkivuliContainer = document.getElementById('rendkivuliContainer');
-  if (tipus === 'Szabadság' || tipus === 'Tavalyi szabadság') {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const kDatum = new Date(kezdoDatum);
-    kDatum.setHours(0, 0, 0, 0);
-    
-    const diffDays = Math.ceil((kDatum - today) / (1000 * 60 * 60 * 24));
+  function handleTypeChange() {
+    const tipus = document.getElementById('tipus')?.value;
+    const timeContainer = document.getElementById('timeContainer');
+    const vegDatumContainer = document.getElementById('vegDatumContainer');
+    const alertEl = document.getElementById('compensatoryLimitAlert');
 
-    if (diffDays < 15) {
-      if (rendkivuliContainer) rendkivuliContainer.classList.remove('hidden');
-      const isRendkivuliCb = document.getElementById('isRendkivuli');
-      const rendkivuliOkInput = document.getElementById('rendkivuliOk');
+    if (tipus === 'Csúsztatás') {
+      if (timeContainer) timeContainer.classList.remove('hidden');
+      if (vegDatumContainer) vegDatumContainer.classList.add('hidden');
+    } else {
+      if (timeContainer) timeContainer.classList.add('hidden');
+      if (vegDatumContainer) vegDatumContainer.classList.remove('hidden');
+      if (alertEl) alertEl.classList.add('hidden');
+    }
+
+    validateDates();
+  }
+
+  function validateDates() {
+    const tipus = document.getElementById('tipus')?.value;
+    const kezdoDatum = document.getElementById('kezdoDatum')?.value;
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (!submitBtn) return;
+
+    if (!tipus || !kezdoDatum) {
+      submitBtn.disabled = true;
+      return;
+    }
+
+    if (tipus === 'Csúsztatás') {
+      const vegDatumInput = document.getElementById('vegDatum');
+      if (vegDatumInput) vegDatumInput.value = kezdoDatum;
       
-      // Ha nincs bepipálva a checkbox vagy nincs indoklás, tiltjuk a gombot
-      if ((isRendkivuliCb && !isRendkivuliCb.checked) || (rendkivuliOkInput && !rendkivuliOkInput.value.trim())) {
+      const kIdo = document.getElementById('kezdoIdo')?.value;
+      const vIdo = document.getElementById('vegIdo')?.value;
+      if (!kIdo || !vIdo) {
         submitBtn.disabled = true;
         return;
+      }
+    }
+
+    const rendkivuliContainer = document.getElementById('rendkivuliContainer');
+    if (tipus === 'Szabadság' || tipus === 'Tavalyi szabadság') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const kDatum = new Date(kezdoDatum);
+      kDatum.setHours(0, 0, 0, 0);
+      
+      const diffDays = Math.ceil((kDatum - today) / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 15) {
+        if (rendkivuliContainer) rendkivuliContainer.classList.remove('hidden');
+        const isRendkivuliCb = document.getElementById('isRendkivuli');
+        const rendkivuliOkInput = document.getElementById('rendkivuliOk');
+        
+        if ((isRendkivuliCb && !isRendkivuliCb.checked) || (rendkivuliOkInput && !rendkivuliOkInput.value.trim())) {
+          submitBtn.disabled = true;
+          return;
+        }
+      } else {
+        if (rendkivuliContainer) rendkivuliContainer.classList.add('hidden');
       }
     } else {
       if (rendkivuliContainer) rendkivuliContainer.classList.add('hidden');
     }
-  } else {
-    // Ha nem szabadság, eltüntetjük a 15 napos blokkot
-    if (rendkivuliContainer) rendkivuliContainer.classList.add('hidden');
-  }
 
-  // HA IDÁIG ELJUTOTT (Minden kötelező mező jó), A GOMBOT ENGEDÉLYEZZÜK!
-  submitBtn.disabled = false;
-}
+    submitBtn.disabled = false;
+  }
 
   function validateCompensatoryHours() {
-  const kIdo = document.getElementById('kezdoIdo')?.value;
-  const vIdo = document.getElementById('vegIdo')?.value;
-  const alertEl = document.getElementById('compensatoryLimitAlert');
-  const reqDisplay = document.getElementById('requestedHoursDisplay');
-  const availDisplay = document.getElementById('availableHoursDisplay');
+    const kIdo = document.getElementById('kezdoIdo')?.value;
+    const vIdo = document.getElementById('vegIdo')?.value;
+    const alertEl = document.getElementById('compensatoryLimitAlert');
+    const reqDisplay = document.getElementById('requestedHoursDisplay');
+    const availDisplay = document.getElementById('availableHoursDisplay');
 
-  if (!kIdo || !vIdo || !alertEl) {
-    if (alertEl) alertEl.classList.add('hidden');
-    validateDates(); 
-    return;
+    if (!kIdo || !vIdo || !alertEl) {
+      if (alertEl) alertEl.classList.add('hidden');
+      validateDates(); 
+      return;
+    }
+
+    const [h1, m1] = kIdo.split(':').map(Number);
+    const [h2, m2] = vIdo.split(':').map(Number);
+    const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+    const requestedHours = diffMins > 0 ? (diffMins / 60) : 0;
+
+    const availableHours = parseFloat(document.getElementById('uiCsusztathato')?.innerText || document.getElementById('bankedHoursDisplay')?.innerText) || 0;
+
+    if (reqDisplay) reqDisplay.innerText = requestedHours.toFixed(1);
+    if (availDisplay) availDisplay.innerText = availableHours.toFixed(1);
+
+    if (requestedHours > availableHours) {
+      alertEl.className = "alert alert-warning mt-2";
+      alertEl.innerHTML = `
+        <strong>⚠️ Mínuszos csúsztatás kérelem!</strong> <br>
+        A kért távollét hossza: <strong>${requestedHours.toFixed(1)}</strong> óra. <br>
+        Elérhető egyenleged: <strong>${availableHours.toFixed(1)}</strong> óra. <br>
+        <span class="small text-dark fw-bold"><i class="bi bi-info-circle me-1"></i> A gombra kattintva meg kell indokolnod a felettesednek a mínuszba lépést!</span>
+      `;
+      alertEl.classList.remove('hidden');
+    } else {
+      alertEl.classList.add('hidden');
+    }
+
+    validateDates();
   }
-
-  // Időtartam kiszámítása órában
-  const [h1, m1] = kIdo.split(':').map(Number);
-  const [h2, m2] = vIdo.split(':').map(Number);
-  const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-  const requestedHours = diffMins > 0 ? (diffMins / 60) : 0;
-
-  // Elérhető egyenleg kiolvasása
-  const availableHours = parseFloat(document.getElementById('uiCsusztathato')?.innerText || document.getElementById('bankedHoursDisplay')?.innerText) || 0;
-
-  if (reqDisplay) reqDisplay.innerText = requestedHours.toFixed(1);
-  if (availDisplay) availDisplay.innerText = availableHours.toFixed(1);
-
-  if (requestedHours > availableHours) {
-    // Csak tájékoztatjuk, a gomb tiltását a validateDates fogja feloldani!
-    alertEl.className = "alert alert-warning mt-2";
-    alertEl.innerHTML = `
-      <strong>⚠️ Mínuszos csúsztatás kérelem!</strong> <br>
-      A kért távollét hossza: <strong>${requestedHours.toFixed(1)}</strong> óra. <br>
-      Elérhető egyenleged: <strong>${availableHours.toFixed(1)}</strong> óra. <br>
-      <span class="small text-dark fw-bold"><i class="bi bi-info-circle me-1"></i> A gombra kattintva meg kell indokolnod a felettesednek a mínuszba lépést!</span>
-    `;
-    alertEl.classList.remove('hidden');
-  } else {
-    alertEl.classList.add('hidden');
-  }
-
-  // Továbbdobjuk a vezérlést a fő ellenőrzőnek
-  validateDates();
-}
 
   function hideSpinner() {
     const spinner = document.getElementById('loading-screen');
@@ -4026,77 +4085,73 @@ function validateDates() {
   }
 
   function exportPayrollToCSV() {
-  const monthVal = document.getElementById('payrollMonthFilter').value;
-  const thead = document.getElementById('payrollReportTableHeader');
-  const tbody = document.getElementById('payrollReportTableBody');
+    const monthVal = document.getElementById('payrollMonthFilter').value;
+    const thead = document.getElementById('payrollReportTableHeader');
+    const tbody = document.getElementById('payrollReportTableBody');
 
-  if (!monthVal || !thead || !tbody || tbody.innerText.includes('Válassz egy hónapot')) {
-    if (typeof showToast === 'function') showToast("Nincs exportálható adat!", "warning");
-    return;
-  }
-
-  const firstDataRow = tbody.querySelector('tr');
-  if (!firstDataRow) {
-    if (typeof showToast === 'function') showToast("Nincs exportálható adat!", "warning");
-    return;
-  }
-
-  // Meghatározzuk a hónap napjainak számát az első adatsor oszlopszámából (11 fix oszlop van előtte)
-  const totalCells = firstDataRow.querySelectorAll('td').length;
-  const daysCount = totalCells - 11;
-
-  let csvLines = [];
-
-  // 1. Fejléc sor: Főkategóriák + Napok (pontos oszlopillesztéssel)
-  let row1 = [
-    "Név", 
-    "Éves keret", 
-    "Még kivehető", 
-    "Még kiv. tavalyi", 
-    "Hónapban kivett (nap)", "", "", "", "", "", // 6 oszlop a kivett napok albonontásának (SZ, B, A, FN, T, CS)
-    "Túlmunka kifizetés"
-  ];
-  for (let d = 1; d <= daysCount; d++) {
-    row1.push(`${d}.`);
-  }
-
-  // 2. Fejléc sor: Alkategóriák pontosan a Hónapban kivett oszlop alá igazítva
-  let row2 = [
-    "", "", "", "", 
-    "SZ", "B", "A", "FN", "T", "CS", 
-    ""
-  ];
-  for (let d = 1; d <= daysCount; d++) {
-    row2.push("");
-  }
-
-  csvLines.push(row1.map(v => `"${v}"`).join(';'));
-  csvLines.push(row2.map(v => `"${v}"`).join(';'));
-
-  // Adatsorok beolvasása a tbody-ból (garantáltan 1-to-1 illeszkedés)
-  const dataRows = tbody.querySelectorAll('tr');
-  dataRows.forEach(tr => {
-    let rowData = [];
-    tr.querySelectorAll('td').forEach(td => {
-      let text = td.innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
-      rowData.push('"' + text.replace(/"/g, '""') + '"');
-    });
-    if (rowData.length > 0) {
-      csvLines.push(rowData.join(';'));
+    if (!monthVal || !thead || !tbody || tbody.innerText.includes('Válassz egy hónapot')) {
+      if (typeof showToast === 'function') showToast("Nincs exportálható adat!", "warning");
+      return;
     }
-  });
 
-  const csvContent = '\uFEFF' + csvLines.join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Berfejtes_Riport_${monthVal}.csv`;
-  link.style.visibility = 'hidden';
+    const firstDataRow = tbody.querySelector('tr');
+    if (!firstDataRow) {
+      if (typeof showToast === 'function') showToast("Nincs exportálható adat!", "warning");
+      return;
+    }
 
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+    const totalCells = firstDataRow.querySelectorAll('td').length;
+    const daysCount = totalCells - 11;
+
+    let csvLines = [];
+
+    let row1 = [
+      "Név", 
+      "Éves keret", 
+      "Még kivehető", 
+      "Még kiv. tavalyi", 
+      "Hónapban kivett (nap)", "", "", "", "", "", 
+      "Túlmunka kifizetés"
+    ];
+    for (let d = 1; d <= daysCount; d++) {
+      row1.push(`${d}.`);
+    }
+
+    let row2 = [
+      "", "", "", "", 
+      "SZ", "B", "A", "FN", "T", "CS", 
+      ""
+    ];
+    for (let d = 1; d <= daysCount; d++) {
+      row2.push("");
+    }
+
+    csvLines.push(row1.map(v => `"${v}"`).join(';'));
+    csvLines.push(row2.map(v => `"${v}"`).join(';'));
+
+    const dataRows = tbody.querySelectorAll('tr');
+    dataRows.forEach(tr => {
+      let rowData = [];
+      tr.querySelectorAll('td').forEach(td => {
+        let text = td.innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
+        rowData.push('"' + text.replace(/"/g, '""') + '"');
+      });
+      if (rowData.length > 0) {
+        csvLines.push(rowData.join(';'));
+      }
+    });
+
+    const csvContent = '\uFEFF' + csvLines.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `Berfejtes_Riport_${monthVal}.csv`;
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   function getPayrollPeriodForDate(dateStr) {
     const comp = extractYMD(dateStr);
@@ -4116,14 +4171,13 @@ function validateDates() {
   }
 
   function setAppActive(element) {
-  document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
-  element.classList.add('active');
-  
-  // Mikro-rezgés visszajelzés gombnyomáskor (Haptic feedback)
-  if ('vibrate' in navigator) {
-    navigator.vibrate(8);
+    document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
+    if (element) element.classList.add('active');
+    
+    if ('vibrate' in navigator) {
+      navigator.vibrate(8);
+    }
   }
-}
 </script>
 
 <script>
