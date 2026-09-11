@@ -789,16 +789,20 @@
   }
 
   async function loginWithGoogle() {
+    // Leszedjük a hash-t és paramétereket, hogy pontosan az aktuális oldalra (almappába) jöjjön vissza
+    const cleanCurrentUrl = window.location.href.split('#')[0].split('?')[0];
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin }
+      options: { redirectTo: cleanCurrentUrl }
     });
     if (error) alert("Hiba a belépés során: " + error.message);
   }
 
   async function logout() {
     await supabaseClient.auth.signOut();
-    window.location.reload();
+    // Újratöltés helyett tiszta URL-re irányítjuk, hogy eltűnjön a token a címsorból
+    const cleanCurrentUrl = window.location.href.split('#')[0].split('?')[0];
+    window.location.href = cleanCurrentUrl;
   }
 
   window.onload = async () => {
