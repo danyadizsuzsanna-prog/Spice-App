@@ -161,6 +161,7 @@
       border-radius: 12px; 
       padding: 12px; 
       background: #ffffff; 
+      overflow: hidden;
     }
 
     #dayDetailList .text-end {
@@ -169,7 +170,7 @@
     }
 
     #dayDetailList strong {
-      font-size: 0.9rem !important;
+      font-size: 0.88rem !important;
       white-space: nowrap !important;
     }
 
@@ -1230,13 +1231,13 @@
                 ${escapeHtml(i.munka || "Nincs megnevezés")}
               </div>
             </div>
-            <div class="text-end d-flex align-items-center justify-content-end flex-shrink-0" style="min-width: 90px; white-space: nowrap;">
-              <strong class="me-2" style="font-size: 0.9rem; white-space: nowrap;">${Number(i.oraszam).toFixed(2)}</strong>
-              <button class="btn btn-sm btn-link text-info p-1 me-1" onclick="promptEditHour('${allIds}', '${i.munkaszam}', ${i.oraszam})" title="Szerkesztés">
-                <i class="bi bi-pencil"></i>
+            <div class="d-flex align-items-center justify-content-end flex-shrink-0 ms-2 gap-1">
+              <strong style="font-size: 0.88rem; white-space: nowrap;" class="me-1">${Number(i.oraszam).toFixed(2)}</strong>
+              <button class="btn btn-sm btn-link text-info p-0 me-1" onclick="promptEditHour('${allIds}', '${i.munkaszam}', ${i.oraszam})" title="Szerkesztés">
+                <i class="bi bi-pencil fs-6"></i>
               </button>
-              <button class="btn btn-sm btn-link text-danger p-1" onclick="deleteEntry('${allIds}', '${i.munkaszam}')" title="Törlés">
-                <i class="bi bi-trash"></i>
+              <button class="btn btn-sm btn-link text-danger p-0" onclick="deleteEntry('${allIds}', '${i.munkaszam}')" title="Törlés">
+                <i class="bi bi-trash fs-6"></i>
               </button>
             </div>
           </div>
@@ -1265,8 +1266,8 @@
                   Jóváhagyva a SzabadságKezelőben (${escapeHtml(leave.tipus || 'Csúsztatás')})
                 </div>
               </div>
-              <div class="text-end flex-shrink-0" style="min-width: 90px; white-space: nowrap;">
-                <strong class="text-success me-2" style="font-size: 0.9rem; white-space: nowrap;">+${hours.toFixed(2)} óra</strong>
+              <div class="text-end flex-shrink-0 ms-2" style="white-space: nowrap;">
+                <strong class="text-success" style="font-size: 0.88rem; white-space: nowrap;">+${hours.toFixed(2)} óra</strong>
               </div>
             </div>
           `);
@@ -1706,7 +1707,6 @@
     }
   }
 
-  /* 🎯 ELŐZMÉNYEK: TELJES PROJEKTNÉV MEGJELENÍTÉSE LISTÁS KÁRTYÁBAN */
   function createJobBtn(j) {
     const b = document.createElement('button'); 
     b.type = 'button';
@@ -3087,7 +3087,7 @@
           const bodyText = `Szia Admin!\n\n${req.nev} pótlási kérelmét a felettese (${approverName}) jóváhagyta (${req.datum}).\nFelettes megjegyzése: "${finalComment}"\nKérlek nyisd meg a napot az Admin felületen!`;
           const htmlBodyText = `<div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
             <h3 style="color: #363636; margin-top: 0; font-size: 16px;">Jóváhagyásra váró kérelem</h3>
-            <p style="font-size: 14px; color: #4a4a4a;"><strong>${escapeHtml(req.nev)}</strong> pótlási kérelmét a felettese (<strong>${escapeHtml(approverName)}</strong>) jóváhagyta a(z) <strong>${req.datum}</strong> napra.</p>
+            <p style="font-size: 14px; color: #4a4a4a;"><strong>${escapeHtml(req.nev)}</strong> pótlási kérelmet a felettese (<strong>${escapeHtml(approverName)}</strong>) jóváhagyta a(z) <strong>${req.datum}</strong> napra.</p>
             <div style="background-color: #f0f8ff; padding: 12px; border-left: 4px solid #3273dc; margin: 10px 0; font-size: 13px;">
               <strong style="color: #3273dc;">Dolgozó indoklása:</strong><br><em>"${escapeHtml(req.indoklas || 'Nincs megadva')}"</em>
             </div>
