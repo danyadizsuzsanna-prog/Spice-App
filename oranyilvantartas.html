@@ -2250,26 +2250,169 @@ async function checkMissingRecords(evt) {
     }
 }
 
-  function sendReminder(workerName, workerEmail) {
-    const missingData = lastMissingReportForEmail[workerEmail];
-    if (!missingData) return;
+  // HTML e-mail sablon a hiányzó órákról
+  function buildReminderEmailHtml(workerName, missingDays) {
+    const portalUrl = window.location.href.split('#')[0].split('?')[0];
+    const daysRows = missingDays.map(d => `
+      <tr>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a;">${d.date}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; color: #dc2626; font-weight: bold;">${d.hours} óra</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${d.required} óra</td>
+      </tr>
+    `).join('');
 
-    const daysText = missingData.days.map(d => `- ${d.date}: rögzítve ${d.hours} óra (elvárt: ${d.required} óra)`).join('%0D%0A');
-    const subject = encodeURIComponent(`Hiányzó munkaidő rögzítés - ${workerName}`);
-    const body = encodeURIComponent(`Szia ${workerName},%0D%0A%0D%0AKérlek pótold a hiányzó óráidat az alábbi napokon:%0D%0A${daysText}%0D%0A%0D%0AÜdvözlettel,%0D%0A${currentUserProfile.nev}`);
-    
-    window.location.href = `mailto:${workerEmail}?subject=${subject}&body=${body}`;
+    return `
+    <div style="font-family: Arial, sans-serif; background-color: #f1f5f9; padding: 25px 10px;">
+      <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <div style="background-color: #eab308; padding: 20px; text-align: center; color: #0f172a;">
+          <h3 style="margin: 0; font-size: 20px;">Hiányzó munkaidő rögzítés ⏱️</h3>
+        </div>
+        <div style="padding: 25px; color: #334155;">
+          <p style="margin-top: 0;">Szia <strong>${workerName}</strong>!</p>
+          <p>Tájékoztatunk, hogy az alábbi napokon hiányos vagy elmaradt munkaidő rögzítést észlelt a rendszer:</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 6px; overflow: hidden; font-size: 14px;">
+            <thead>
+              <tr style="background-color: #f1f5f9; text-align: left; color: #64748b;">
+                <th style="padding: 8px 12px;">Dátum</th>
+                <th style="padding: 8px 12px;">Rögzítve</th>
+                <th style="padding: 8px 12px;">Elvárt</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${daysRows}
+            </tbody>
+          </table>
+
+          <p style="font-size: 13px; color: #64748b;">Kérlek, lépj be a portálra és pótold a hiányzó óráidat!</p>
+
+          <div style="text-align: center; margin-top: 25px;">
+            <a href="${portalUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Óranyilvántartás megnyitása</a>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }
 
-  function sendAllReminders() {
-    const emails = Object.keys(lastMissingReportForEmail);
-    if (emails.length === 0) return;
+  // ==============================================================================
+// MODAL KEZELŐ SEGÉDFÜGGVÉNYEK (Globálisak)
+// ==============================================================================
+function showModal(message, title = "Tájékoztatás") {
+  const modalEl = document.getElementById('customModal');
+  if (!modalEl) {
+    alert(title + ": " + message.replace(/<[^>]*>?/gm, ''));
+    return;
+  }
 
-    const bccList = emails.join(',');
-    const subject = encodeURIComponent(`Hiányzó munkaidő rögzítés figyelmeztetés`);
-    const body = encodeURIComponent(`Kedves Kollégák,%0D%0A%0D%0AA rendszer hiányzó órákat észlelt az elmúlt időszakban a profilotoknál. Kérlek benneteket, hogy lépjetek be és pótoljátok az elmaradt napokat!%0D%0A%0D%0AÜdvözlettel,%0D%0A${currentUserProfile.nev}`);
+  const titleEl = document.getElementById('modalTitle');
+  const msgEl = document.getElementById('modalMsg');
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.innerHTML = message;
 
-    window.location.href = `mailto:?bcc=${bccList}&subject=${subject}&body=${body}`;
+  const footerEl = document.getElementById('modalFooter');
+  if (footerEl) {
+    footerEl.innerHTML = `<button class="btn btn-sm btn-primary fw-bold px-4" onclick="closeModal()">Rendben</button>`;
+  }
+
+  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  bsModal.show();
+}
+
+function closeModal() {
+  const modalEl = document.getElementById('customModal');
+  if (modalEl) {
+    const bsModal = bootstrap.Modal.getInstance(modalEl);
+    if (bsModal) bsModal.hide();
+  }
+}
+
+function safeSetGlobalLoading(isLoading, message) {
+  if (typeof setGlobalLoading === 'function') {
+    setGlobalLoading(isLoading, message);
+  }
+}
+
+// ==============================================================================
+// EMLÉKEZTETŐ E-MAILEK KÜLDÉSE (A hiányzókhoz)
+// ==============================================================================
+
+  async function sendReminder(workerName, workerEmail) {
+    const emailCleanKey = cleanEmail(workerEmail);
+    const missingData = lastMissingReportForEmail[emailCleanKey] || lastMissingReportForEmail[workerEmail];
+    
+    if (!missingData || !missingData.days || missingData.days.length === 0) {
+      return showModal("A kiválasztott munkatársnak nincsenek hiányzó napjai.", "Információ");
+    }
+
+    const senderName = currentUserProfile?.nev || 'Vezetőség';
+    const subject = `Hiányzó munkaidő rögzítés - ${workerName}`;
+    const daysSummary = missingData.days.map(d => `- ${d.date}: rögzítve ${d.hours} óra (elvárt: ${d.required} óra)`).join('\n');
+    const bodyText = `Szia ${workerName}!\n\nKérlek pótold a hiányzó óráidat az alábbi napokon:\n${daysSummary}\n\nÜdvözlettel,\n${senderName}`;
+    
+    const htmlBodyText = buildReminderEmailHtml(workerName, missingData.days);
+
+    setGlobalLoading(true, "Emlékeztető küldése...");
+
+    try {
+      await sendAutomatedEmail(workerEmail, subject, bodyText, htmlBodyText);
+      setGlobalLoading(false);
+      showModal(`Az emlékeztető e-mail sikeresen elküldve <strong>${workerName}</strong> részére!`, "Siker");
+    } catch (err) {
+      setGlobalLoading(false);
+      showModal("Hiba az e-mail küldésekor: " + err.message, "Hiba");
+    }
+  }
+
+  // Összes hiányzó munkatárs tömeges értesítése
+  async function sendAllReminders() {
+    const emailKeys = Object.keys(lastMissingReportForEmail);
+    if (emailKeys.length === 0) {
+      return showModal("Nincs értesítendő hiányzó munkatárs.", "Információ");
+    }
+
+    showModal(`Biztosan elküldöd az emlékeztető e-mailt mind a <strong>${emailKeys.length}</strong> hiányzó munkatársnak?`, "Tömeges értesítés");
+    const footer = document.getElementById('modalFooter');
+    if (footer) {
+      footer.innerHTML = `
+        <button class="btn btn-sm btn-danger fw-bold me-1" id="confirmAllRemindersBtn">
+          <i class="bi bi-send me-1"></i> Igen, mindet értesítem
+        </button>
+        <button class="btn btn-sm btn-secondary" onclick="closeModal()">Mégse</button>
+      `;
+      document.getElementById('confirmAllRemindersBtn').onclick = executeSendAllReminders;
+    }
+  }
+
+  // Tömeges küldés végrehajtása
+  async function executeSendAllReminders() {
+    closeModal();
+    setGlobalLoading(true, "Emlékeztetők küldése...");
+
+    const emailKeys = Object.keys(lastMissingReportForEmail);
+    let successCount = 0;
+
+    try {
+      for (const key of emailKeys) {
+        const item = lastMissingReportForEmail[key];
+        if (item && item.email && item.days && item.days.length > 0) {
+          const senderName = currentUserProfile?.nev || 'Vezetőség';
+          const subject = `Hiányzó munkaidő rögzítés - ${item.name}`;
+          const daysSummary = item.days.map(d => `- ${d.date}: rögzítve ${d.hours} óra (elvárt: ${d.required} óra)`).join('\n');
+          const bodyText = `Szia ${item.name}!\n\nKérlek pótold a hiányzó óráidat az alábbi napokon:\n${daysSummary}\n\nÜdvözlettel,\n${senderName}`;
+          
+          const htmlBodyText = buildReminderEmailHtml(item.name, item.days);
+
+          await sendAutomatedEmail(item.email, subject, bodyText, htmlBodyText);
+          successCount++;
+        }
+      }
+
+      setGlobalLoading(false);
+      showModal(`Sikeresen elküldve <strong>${successCount} db</strong> emlékeztető e-mail!`, "Siker");
+    } catch (err) {
+      setGlobalLoading(false);
+      showModal("Hiba történt a tömeges küldés során: " + err.message, "Hiba");
+    }
   }
 
   function hideMissingRecords() {
