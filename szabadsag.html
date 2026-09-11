@@ -38,7 +38,7 @@
   }
 
   html, body {
-    overscroll-behavior-y: none; /* Webes gumi-pattogás kikapcsolása */
+    overscroll-behavior-y: none;
   }
 
   body { 
@@ -51,11 +51,11 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Érintési visszajelzés: LETILTVA A MOZGÁS ÉS SKÁLÁZÁS RÁBÖKÉSKOR */
+  /* Érintési visszajelzés: mozgások kikapcsolása */
   button, .btn, .nav-link, .card, .badge, .dropdown-item, .app-nav-item {
     user-select: none;
     touch-action: manipulation;
-    transform: none !important; /* Rugózás és ugrálás teljes letiltása */
+    transform: none !important;
     transition: background-color 0.15s ease, color 0.15s ease !important;
   }
 
@@ -76,13 +76,57 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
   }
 
-  /* App Shell Kártyák és Konténerek */
+  /* App Shell Kártyák */
   .card { 
     border: 1px solid rgba(226, 232, 240, 0.9) !important; 
     border-radius: 18px !important; 
     box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important; 
     margin-bottom: 20px;
     background: #ffffff !important;
+  }
+
+  /* 🎯 SAJÁT PULT: PROFIL CSEMPERÁCS (STAT GRID) */
+  .profile-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+  }
+
+  .stat-tile {
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .stat-tile-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .stat-tile-value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .stat-tile.success-tile { background-color: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+  .stat-tile.warning-tile { background-color: #fffbeb; border-color: #fde68a; color: #b45309; }
+  .stat-tile.info-tile { background-color: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+  .stat-tile.primary-tile { background-color: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+  /* 🎯 SAJÁT PULT: ÚJ TÁVOLLÉT KÁRTYA KIEMELÉSE */
+  .card-form-highlight {
+    border-top: 4px solid #2563eb !important;
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.08) !important;
   }
 
   .navbar { 
@@ -95,7 +139,6 @@
   .hidden { display: none !important; }
   .loading-spinner { display: inline-block; width: 2rem; height: 2rem; }
 
-  /* Szöveg- és e-mail túlfolyás elleni védelem */
   td, th, span, small, p, div, strong {
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -124,7 +167,6 @@
   .calendar-absences-container { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
   .absence-badge { font-size: 0.65rem; padding: 2px 4px; border-radius: 5px; font-weight: 800; text-align: center; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* 🎯 JELMAGYARÁZAT: Kompakt lekerekített kapszula (Pill) forma */
   .calendar-container .d-flex.flex-wrap,
   .d-flex.flex-wrap {
     display: flex !important;
@@ -329,18 +371,15 @@
   }
 
   /* =========================================================
-     5. ALSÓ NAVIGÁCIÓ (BOTTOM BAR) ÉS MOBIL NATIVE ELRENDEZÉS
+     5. ALSÓ NAVIGÁCIÓ (BOTTOM BAR) ÉS MOBIL ELRENDEZÉS
      ========================================================= */
   @media screen and (max-width: 768px) {
-    /* Felső webes menü elrejtése mobilon */
     .navbar { display: none !important; }
 
-    /* Margó az alsó rögzített menü miatt */
     body {
       padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
     }
 
-    /* Fixed Alsó Navigációs Sáv (Bottom Navigation Bar) */
     .app-bottom-nav {
       position: fixed;
       bottom: 0;
@@ -372,15 +411,9 @@
       cursor: pointer;
     }
 
-    .app-nav-item i {
-      font-size: 1.25rem;
-    }
+    .app-nav-item i { font-size: 1.25rem; }
+    .app-nav-item.active { color: #2563eb !important; }
 
-    .app-nav-item.active {
-      color: #2563eb !important;
-    }
-
-    /* Fejlécek és szűrők kényelmes egymás alá rendezése */
     #view-overtime-approval .d-flex.justify-content-between,
     .tab-content > .d-flex.justify-content-between,
     .card-body > .d-flex.justify-content-between,
@@ -396,7 +429,6 @@
       border-radius: 12px !important;
     }
 
-    /* Havi grid naptár sűrítése */
     .calendar-day {
       min-height: 50px !important;
       padding: 3px !important;
@@ -405,7 +437,6 @@
     .calendar-day-num { font-size: 0.75rem !important; }
     .calendar-absences-container { gap: 2px !important; margin-top: 2px !important; }
 
-    /* Sima listás táblázatok átalakítása App Kártyákká */
     .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) table thead {
       display: none !important;
     }
@@ -452,16 +483,6 @@
       flex-shrink: 0;
     }
 
-    /* Az e-mail címek és nevek tördelése jobbra igazítva */
-    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td > *,
-    #adminUsersTableBody td,
-    td span, td strong, td small {
-      text-align: right !important;
-      word-break: break-all !important;
-      overflow-wrap: anywhere !important;
-    }
-
-    /* Modalok átalakítása felnyíló alsó lappá (Bottom Sheet) */
     .modal-dialog {
       margin: 0 !important;
       position: fixed !important;
@@ -478,7 +499,6 @@
     }
   }
 
-  /* Asztali gépen elrejtjük az alsó sávot */
   @media screen and (min-width: 769px) {
     .app-bottom-nav {
       display: none !important;
@@ -513,21 +533,18 @@
           </a>
         </li>
         
-        <!-- TÚLMUNKA JÓVÁHAGYÁS MENÜPONT -->
         <li class="nav-item hidden" id="nav-overtime">
           <a class="nav-link text-success fw-bold" id="nav-link-overtime" onclick="switchView('overtime-approval')" style="cursor: pointer;">
             Túlmunka Jóváhagyás
           </a>
         </li>
 
-        <!-- BÉRFEJTÉS MENÜPONT -->
         <li class="nav-item hidden" id="nav-payroll">
           <a class="nav-link text-primary fw-bold" id="nav-link-payroll" onclick="switchView('payroll')" style="cursor: pointer;">
             <i class="bi bi-file-earmark-spreadsheet me-1"></i> Bérszámfejtés
           </a>
         </li>
 
-        <!-- ADMINISZTRÁCIÓ MENÜPONT -->
         <li class="nav-item hidden" id="nav-admin">
           <a class="nav-link text-info fw-bold" id="nav-link-admin" onclick="switchView('admin')" style="cursor: pointer;">⚙️ Adminisztráció</a>
         </li>
@@ -546,77 +563,90 @@
 
   <!-- SAJÁT PULT (DASHBOARD) NÉZET -->
   <div id="view-dashboard" class="row hidden">
+    
+    <!-- BAL OLDAL / FEJLÉC: MUNKATÁRS PROFILJA & KOMPAKT CSEMPERÁCS -->
     <div class="col-md-4">
-      <div class="card p-4 shadow-sm">
-        <h6 class="text-uppercase text-muted small fw-bold mb-2">Munkatárs profilja</h6>
-        <h3 class="text-primary mb-1 fw-bold" id="uiNev">-</h3>
-        <p class="text-muted small border-bottom pb-3 mb-3" id="uiEmail">-</p>
+      <div class="card p-3 shadow-sm mb-4">
         
-        <div class="d-flex justify-content-between py-2 border-bottom text-dark">
-          <span>Csoport:</span>
-          <strong id="uiCsoport">-</strong>
-        </div>
-        <div class="d-flex justify-content-between py-2 border-bottom text-dark">
-          <span>Pozíció:</span>
-          <strong class="text-secondary" id="uiPozicio">-</strong>
-        </div>
-
-        <div class="py-2 border-bottom bg-light px-2 rounded my-2">
-          <div class="d-flex justify-content-between small text-muted">
-            <span>Tavalyi alap / Kivett:</span>
-            <span><span id="uiTavalyiAlap">0</span> / <span id="uiTavalyiKivett">0</span> nap</span>
+        <!-- Felhasználó Címsor Fejléc -->
+        <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+          <div>
+            <h5 class="text-primary mb-0 fw-bold" id="uiNev">-</h5>
+            <small class="text-muted d-block" id="uiEmail" style="font-size: 0.75rem;">-</small>
           </div>
-          <div class="d-flex justify-content-between align-items-center mt-1">
-            <span class="small fw-bold text-dark">🍂 Maradék tavalyi:</span>
-            <strong class="text-warning fw-bold" id="uiTavalyiFennmarado">- nap</strong>
+          <div class="text-end">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle fw-bold" id="uiCsoport">-</span>
+            <small class="text-muted d-block mt-1" id="uiPozicio" style="font-size: 0.7rem;">-</small>
           </div>
         </div>
 
-        <div class="d-flex justify-content-between py-2 border-bottom text-muted small">
-          <span>Idei alap / Eddig kivett:</span>
-          <span><span id="uiAlapKeret">-</span> / <strong class="text-danger" id="uiIdeiKivett">0</strong> nap</span>
-        </div>
-        <div class="d-flex justify-content-between py-2 border-bottom text-muted small">
-          <span>Időarányosan kiveendő:</span>
-          <strong id="uiIdoaranyos">- nap</strong>
-        </div>
-        <div class="d-flex justify-content-between py-2 border-bottom bg-light px-2 rounded my-2 align-items-center">
-          <span class="fw-bold text-dark">☀️ Maradék idei:</span>
-          <strong class="text-success fs-5 fw-bold" id="uiEvesKeret">- nap</strong>
+        <!-- 🎯 TAGOLT MOBIL-BARÁT CSEMPERÁCS (KPI TILES) -->
+        <div class="profile-stat-grid">
+          <div class="stat-tile success-tile">
+            <span class="stat-tile-title">☀️ Maradék idei</span>
+            <span class="stat-tile-value" id="uiEvesKeret">- nap</span>
+          </div>
+          <div class="stat-tile warning-tile">
+            <span class="stat-tile-title">🍂 Maradék tavalyi</span>
+            <span class="stat-tile-value" id="uiTavalyiFennmarado">- nap</span>
+          </div>
+          <div class="stat-tile info-tile">
+            <span class="stat-tile-title">⏱️ Csúsztatható</span>
+            <span class="stat-tile-value" id="uiCsusztathato">- óra</span>
+          </div>
+          <div class="stat-tile primary-tile">
+            <span class="stat-tile-title">🎯 Elérhető HO</span>
+            <span class="stat-tile-value" id="uiHoMaradek">- nap</span>
+          </div>
         </div>
 
-        <div class="d-flex justify-content-between py-2 border-bottom align-items-center">
-          <span class="text-muted small fw-bold">Csúsztatható egyenleg:</span>
-          <strong class="text-info fs-6 fw-bold" id="uiCsusztathato">- óra</strong>
+        <!-- Kinyitható részletes keretadatok (nem terheli a kijelzőt) -->
+        <div class="accordion accordion-flush mt-1" id="profileAccordion">
+          <div class="accordion-item border-0">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed py-2 px-0 text-muted small fw-bold bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProfileDetails">
+                <i class="bi bi-info-circle me-1"></i> Részletes keretinformációk
+              </button>
+            </h2>
+            <div id="collapseProfileDetails" class="accordion-collapse collapse" data-bs-parent="#profileAccordion">
+              <div class="accordion-body px-0 pt-2 pb-0 small text-muted">
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                  <span>Tavalyi alap / Kivett:</span>
+                  <span><span id="uiTavalyiAlap">0</span> / <span id="uiTavalyiKivett">0</span> nap</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                  <span>Idei alap / Kivett:</span>
+                  <span><span id="uiAlapKeret">-</span> / <strong class="text-danger" id="uiIdeiKivett">0</strong> nap</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                  <span>Időarányosan kiveendő:</span>
+                  <strong id="uiIdoaranyos">- nap</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                  <span>HO havi keret / Mérleg neve:</span>
+                  <span id="uiAktualisHonapNeve"><span id="uiHoKeret">0</span> nap</span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                  <span>HO kivett / függőben:</span>
+                  <span class="text-danger fw-bold"><span id="uiHoKivett">0</span> nap</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div class="mt-4 pt-3 border-top border-secondary-subtle">
-          <h6 class="text-primary fw-bold mb-3 d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-house-door-fill me-1"></i> Home Office mérleg</span>
-            <span class="badge bg-secondary bg-opacity-10 text-secondary border small font-monospace" id="uiAktualisHonapNeve">Betöltés...</span>
-          </h6>
-          
-          <div class="d-flex justify-content-between py-2 border-bottom text-muted small">
-            <span>Havi alapkeret:</span>
-            <span><span id="uiHoKeret">0</span> nap</span>
-          </div>
-          <div class="d-flex justify-content-between py-2 border-bottom text-muted small">
-            <span>Kivett / Függőben lévő:</span>
-            <span class="text-danger fw-bold"><span id="uiHoKivett">0</span> nap</span>
-          </div>
-          <div class="d-flex justify-content-between py-2 bg-light px-2 rounded mt-2 align-items-center">
-            <span class="fw-bold text-dark">🎯 Elérhető HO egyenleg:</span>
-            <strong class="text-success fs-5 fw-bold" id="uiHoMaradek">- nap</strong>
-          </div>
-        </div>
-        
-        <div id="statusAlert" class="alert alert-info mt-3 hidden"></div>
+
+        <div id="statusAlert" class="alert alert-info mt-2 mb-0 hidden"></div>
       </div>
     </div>
 
+    <!-- JOBB OLDAL / ÚJ TÁVOLLÉT RÖGZÍTÉSE & NAPTÁR -->
     <div class="col-md-8">
-      <div class="card p-4 shadow-sm mb-4">
-        <h4 class="mb-4 text-dark fw-bold">Új távollét / kérelem rögzítése</h4>
+      
+      <!-- 🎯 KÖNNYEN ÉSZREVEHETŐ ÚJ TÁVOLLÉT RÖGZÍTÉSE KÁRTYA -->
+      <div class="card p-4 shadow-sm mb-4 card-form-highlight">
+        <h4 class="mb-3 text-dark fw-bold d-flex align-items-center">
+          <i class="bi bi-plus-circle-fill text-primary me-2"></i> Új távollét / kérelem rögzítése
+        </h4>
         
         <form id="leaveForm" onsubmit="handleFormSubmit(event)">
           <div class="mb-3">
@@ -769,7 +799,6 @@
   <div id="view-team" class="row hidden">
     <div class="col-12">
       
-      <!-- 1. KÁRTYA: Függő Szabadság és Távollét Kérelmek -->
       <div class="card p-4 shadow-sm mb-4 border-top border-4 border-warning">
         <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
           <div>
@@ -805,7 +834,6 @@
         </div>
       </div>
 
-      <!-- 2. KÁRTYA: Csapat Túlóra és Kifizetés Kezelő (Mérlegek) -->
       <div class="card p-4 shadow-sm border-top border-4 border-success">
         <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
           <div>
@@ -853,7 +881,6 @@
           <i class="bi bi-check-circle-fill text-success me-2"></i>Túlmunka Kifizetés Jóváhagyások
         </h4>
         <div class="d-flex gap-2">
-          <!-- HÓNAP SZŰRŐ -->
           <select id="overtimeApprovalMonthFilter" class="form-select form-select-sm fw-bold border-secondary shadow-sm" style="width: auto;" onchange="renderOvertimeApprovalsTable()">
             <option value="ALL">🌐 Minden hónap</option>
           </select>
@@ -979,7 +1006,6 @@
           <div class="table-responsive payroll-scroll" style="max-height: 70vh; overflow-y: auto; overflow-x: auto;">
             <table class="table table-bordered table-hover align-middle text-center mb-0" style="white-space: nowrap; font-size: 0.85rem;">
               <thead class="table-light sticky-top" style="z-index: 10;" id="payrollReportTableHeader">
-                <!-- JavaScript generálja a dinamikus fejlécet -->
               </thead>
               <tbody id="payrollReportTableBody">
                 <tr>
@@ -1746,11 +1772,11 @@
         csusztathatoEl.innerText = balance.toFixed(1) + " óra";
 
         if (balance < 0) {
-          csusztathatoEl.className = "fw-bold text-danger";
+          csusztathatoEl.className = "stat-tile-value text-danger";
         } else if (balance > 0) {
-          csusztathatoEl.className = "fw-bold text-success";
+          csusztathatoEl.className = "stat-tile-value text-success";
         } else {
-          csusztathatoEl.className = "fw-bold text-primary";
+          csusztathatoEl.className = "stat-tile-value text-primary";
         }
       }
 
@@ -1787,7 +1813,6 @@
     const canSeeOvertime = ['manager', 'leader', 'csoportvezeto', 'admin', 'boss', 'hr'].includes(cleanRole) || rawPos.includes('hr');
     const canSeePayroll = ['admin', 'boss', 'hr'].includes(cleanRole) || rawPos.includes('hr');
 
-    // Asztali menüpontok frissítése
     const navTeam = document.getElementById('nav-team');
     if (navTeam) navTeam.classList.toggle('hidden', !canSeeTeam);
 
@@ -1800,7 +1825,6 @@
     const navPayroll = document.getElementById('nav-payroll');
     if (navPayroll) navPayroll.classList.toggle('hidden', !canSeePayroll);
 
-    // Mobil Alsó Navigáció elemeinek frissítése
     const mbTeam = document.getElementById('mbTabTeam');
     if (mbTeam) mbTeam.classList.toggle('hidden', !canSeeTeam);
 
@@ -1866,7 +1890,6 @@
       const hoMaradekEl = document.getElementById('uiHoMaradek');
       if (hoMaradekEl) {
         hoMaradekEl.innerText = hoMaradek + " nap";
-        hoMaradekEl.className = hoMaradek <= 0 ? "text-danger fs-5 fw-bold" : "text-success fs-5 fw-bold";
       }
 
       renderMyRequestsTable(userRequestsCache);
@@ -3375,7 +3398,6 @@
       let query = supabaseClient.from('overtime_decisions').select('*').eq('tipus', 'Kifizetés');
 
       if (isAdmin) {
-        // Admin mindent lát
       } else if (isBoss) {
         query = query.in('status', ['pending_boss', 'approved', 'challenged']);
       } else if (isHR) {
@@ -3624,7 +3646,6 @@
       target.classList.remove('d-none');
     }
 
-    // Alsó mobil menüsáv szinkronizálása az asztali nézetváltásokkal
     syncBottomNavActiveState(viewName);
 
     if (viewName === 'team') loadPendingApprovals();
