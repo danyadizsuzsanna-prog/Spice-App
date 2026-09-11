@@ -59,6 +59,13 @@
     transition: background-color 0.15s ease, color 0.15s ease !important;
   }
 
+  /* Gombok, jelvények és fejlécek szótörésének felülbírálása (Csomagolt szövegek elkerülése) */
+  .btn, .badge, th, .text-nowrap {
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    white-space: nowrap !important;
+  }
+
   /* Modern App Form elemek */
   input, textarea, select, .form-control, .form-select {
     user-select: text;
@@ -85,7 +92,7 @@
     background: #ffffff !important;
   }
 
-  /* 🎯 SAJÁT PULT: PROFIL CSEMPERÁCS (STAT GRID) */
+  /* SAJÁT PULT: PROFIL CSEMPERÁCS (STAT GRID) */
   .profile-stat-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -123,10 +130,23 @@
   .stat-tile.info-tile { background-color: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
   .stat-tile.primary-tile { background-color: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
 
-  /* 🎯 SAJÁT PULT: ÚJ TÁVOLLÉT KÁRTYA KIEMELÉSE */
+  /* SAJÁT PULT: ÚJ TÁVOLLÉT KÁRTYA KIEMELÉSE */
   .card-form-highlight {
     border-top: 4px solid #2563eb !important;
     box-shadow: 0 8px 25px rgba(37, 99, 235, 0.08) !important;
+  }
+
+  /* ACCORDION STÍLUSOK */
+  .accordion-button:not(.collapsed) {
+    background-color: transparent !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+  }
+  .accordion-button:focus {
+    box-shadow: none !important;
+  }
+  .accordion-item {
+    border: none !important;
   }
 
   .navbar { 
@@ -142,6 +162,17 @@
   td, th, span, small, p, div, strong {
     overflow-wrap: anywhere;
     word-break: break-word;
+  }
+
+  /* 🎯 ADMINISZTRÁCIÓS FÜL TÁBLÁZAT JAVÍTÁSAI (ASZTALI & MOBIL NÉZET) */
+  #view-admin .table th,
+  #view-admin .table td {
+    vertical-align: middle !important;
+  }
+
+  #view-admin .table th {
+    white-space: nowrap !important;
+    word-break: normal !important;
   }
 
   /* =========================================================
@@ -374,12 +405,15 @@
      5. ALSÓ NAVIGÁCIÓ (BOTTOM BAR) ÉS MOBIL ELRENDEZÉS
      ========================================================= */
   @media screen and (max-width: 768px) {
+    /* Felső webes menü elrejtése mobilon */
     .navbar { display: none !important; }
 
+    /* Margó az alsó rögzített menü miatt */
     body {
       padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
     }
 
+    /* Fixed Alsó Navigációs Sáv */
     .app-bottom-nav {
       position: fixed;
       bottom: 0;
@@ -483,12 +517,40 @@
       flex-shrink: 0;
     }
 
+    /* ÜRES TÁBLÁZAT ÁLLAPOTOK KÖZÉPRE ZÁRÁSA */
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td[colspan],
+    #approvalsTableBody td[colspan],
+    #adminUsersTableBody td[colspan],
+    #myRequestsTableBody td[colspan],
+    #overtimeApprovalTableBody td[colspan] {
+      display: block !important;
+      text-align: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      padding: 16px 10px !important;
+    }
+
+    .table-responsive:not(.gantt-scroll-wrapper):not(.payroll-scroll):not(.matrix-container) td[colspan]::before,
+    #approvalsTableBody td[colspan]::before,
+    #adminUsersTableBody td[colspan]::before,
+    #myRequestsTableBody td[colspan]::before,
+    #overtimeApprovalTableBody td[colspan]::before {
+      content: none !important;
+      display: none !important;
+    }
+
+    /* Az e-mail címek tördelése */
+    .user-email-text {
+      overflow-wrap: anywhere !important;
+      word-break: break-all !important;
+    }
+
+    /* Modalok átalakítása felnyíló alsó lappá */
     .modal-dialog {
       margin: 0 !important;
-      position: fixed !important;
-      bottom: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
+      display: flex !important;
+      align-items: flex-end !important;
+      min-height: 100% !important;
       max-width: 100% !important;
     }
 
@@ -496,6 +558,15 @@
       border-radius: 24px 24px 0 0 !important;
       border: none !important;
       box-shadow: 0 -10px 25px rgba(15, 23, 42, 0.15) !important;
+      max-height: 92vh !important;
+      width: 100% !important;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-body {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
     }
   }
 
@@ -572,7 +643,7 @@
         <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
           <div>
             <h5 class="text-primary mb-0 fw-bold" id="uiNev">-</h5>
-            <small class="text-muted d-block" id="uiEmail" style="font-size: 0.75rem;">-</small>
+            <small class="text-muted d-block user-email-text" id="uiEmail" style="font-size: 0.75rem;">-</small>
           </div>
           <div class="text-end">
             <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle fw-bold" id="uiCsoport">-</span>
@@ -600,7 +671,7 @@
           </div>
         </div>
 
-        <!-- Kinyitható részletes keretadatok (nem terheli a kijelzőt) -->
+        <!-- Kinyitható részletes keretadatok -->
         <div class="accordion accordion-flush mt-1" id="profileAccordion">
           <div class="accordion-item border-0">
             <h2 class="accordion-header">
@@ -766,32 +837,46 @@
         </div>
       </div>
 
-      <div class="card p-4 shadow-sm">
-        <h4 class="mb-3 text-dark fw-bold">⚙️ Aktív és függő kérelmeim</h4>
-        <p class="text-muted small">Itt láthatod és törölheted a még el nem bírált (függő), illetve a jövőben kezdődő jóváhagyott távolléteidet.</p>
-        
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Típus</th>
-                <th>Dátumintervallum</th>
-                <th>Idő</th>
-                <th>Státusz</th>
-                <th class="text-center">Művelet</th>
-              </tr>
-            </thead>
-            <tbody id="myRequestsTableBody">
-              <tr>
-                <td colspan="5" class="text-center text-muted py-3">Kérelmek betöltése...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div id="noMyRequestsMsg" class="text-center py-2 text-muted hidden">
-          <small>Nincs folyamatban lévő vagy jövőbeli törölhető kérelmed.</small>
+      <!-- 🎯 AKTÍV ÉS FÜGGŐ KÉRELMEK (ÖSSZECSUKHATÓ ACCORDION) -->
+      <div class="card shadow-sm p-0 mb-4" style="overflow: hidden;">
+        <div class="accordion accordion-flush" id="myRequestsAccordion">
+          <div class="accordion-item border-0 bg-transparent">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold text-dark px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMyRequests" style="font-size: 1.05rem;">
+                <i class="bi bi-gear-fill text-secondary me-2"></i> Aktív és függő kérelmeim
+              </button>
+            </h2>
+            <div id="collapseMyRequests" class="accordion-collapse collapse" data-bs-parent="#myRequestsAccordion">
+              <div class="accordion-body px-4 pt-0 pb-4">
+                <p class="text-muted small mb-3">Itt láthatod és törölheted a még el nem bírált (függő), illetve a jövőben kezdődő jóváhagyott távolléteidet.</p>
+                
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Típus</th>
+                        <th>Dátumintervallum</th>
+                        <th>Idő</th>
+                        <th>Státusz</th>
+                        <th class="text-center">Művelet</th>
+                      </tr>
+                    </thead>
+                    <tbody id="myRequestsTableBody">
+                      <tr>
+                        <td colspan="5" class="text-center text-muted py-3">Kérelmek betöltése...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div id="noMyRequestsMsg" class="text-center py-2 text-muted hidden">
+                  <small>Nincs folyamatban lévő vagy jövőbeli törölhető kérelmed.</small>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      
     </div>
   </div>
 
@@ -2365,7 +2450,7 @@
         <tr>
           <td data-label="Munkatárs" class="text-start">
             <strong>${escapeHtml(u.nev || 'Névtelen')}</strong><br>
-            <small class="text-muted">${escapeHtml(u.email)}</small>
+            <small class="text-muted user-email-text">${escapeHtml(u.email)}</small>
           </td>
           <td data-label="Csoport/Pozíció">
             <span class="fw-bold">${escapeHtml(u.csoport || '-')}</span><br>
@@ -3405,7 +3490,7 @@
       } else if (isManager) {
         query = query.in('status', ['pending_manager', 'approved', 'challenged']);
       } else {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-muted py-4">Nincs jogosultságod a jóváhagyási kérelmek megtekintéséhez.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="text-muted py-4 text-center">Nincs jogosultságod a jóváhagyási kérelmek megtekintéséhez.</td></tr>`;
         return;
       }
 
@@ -3424,7 +3509,7 @@
 
     } catch (err) {
       console.error("Hiba a jóváhagyások betöltésekor:", err);
-      tbody.innerHTML = `<tr><td colspan="10" class="text-danger py-3">Hiba történt: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-danger py-3 text-center">Hiba történt: ${err.message}</td></tr>`;
     }
   }
 
@@ -3472,7 +3557,7 @@
     }
 
     if (displayRequests.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="text-muted py-4">Nincs megjeleníthető kifizetési kérelem a kiválasztott időszakban.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-muted py-4 text-center">Nincs megjeleníthető kifizetési kérelem a kiválasztott időszakban.</td></tr>`;
       return;
     }
 
