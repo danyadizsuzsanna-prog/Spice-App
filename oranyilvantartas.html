@@ -26,306 +26,336 @@
   <link rel="apple-touch-icon" href="/icon-192.png">
 
   <style>
-    /* =========================================================
-       1. NATÍV APP TIPOGRÁFIA ÉS CLEAN ALAPOK (NINCS RUGÓZÁS)
-       ========================================================= */
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+  /* =========================================================
+     1. NATÍV APP TIPOGRÁFIA ÉS CLEAN ALAPOK (NINCS RUGÓZÁS)
+     ========================================================= */
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
-    * {
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      box-sizing: border-box;
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    overscroll-behavior-y: none;
+  }
+
+  body { 
+    background-color: #f8fafc; 
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; 
+    padding-bottom: 30px; 
+    padding-top: max(12px, env(safe-area-inset-top));
+    color: #0f172a;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Érintési visszajelzés: mozgások kikapcsolása */
+  button, .btn, .nav-link, .card, .badge, .dropdown-item, .app-nav-item {
+    user-select: none;
+    touch-action: manipulation;
+    transform: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+  }
+
+  /* Modern App Form elemek */
+  input, textarea, select, .form-control, .form-select {
+    user-select: text;
+    font-size: 16px !important;
+    font-family: inherit !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #cbd5e1 !important;
+    padding: 10px 14px !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  input:focus, textarea:focus, select:focus, .form-control:focus, .form-select:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  }
+
+  .main-container { 
+    margin: 0 auto !important; 
+    transition: max-width 0.3s ease-in-out; 
+    width: 100%; 
+  }
+  .is-narrow-view { max-width: 650px !important; }
+  .is-wide-view { max-width: 98% !important; }
+
+  /* App Shell Kártyák */
+  .card {
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important;
+    margin-bottom: 20px;
+    background: #ffffff !important;
+  }
+
+  .navbar-custom {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  }
+
+  .navbar .nav-link {
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 600;
+  }
+
+  .navbar .nav-link:hover,
+  .navbar .nav-link.active {
+    color: #ffffff !important;
+  }
+
+  .tab-content-item { display: none; }
+  .tab-content-item.is-active { display: block; }
+
+  .search-box-highlight { 
+    background-color: #f0fdf4; 
+    border: 1.5px solid #16a34a; 
+    border-radius: 14px; 
+    padding: 15px; 
+    margin-bottom: 20px; 
+  }
+
+  .btn-group, select, .form-select, .input-group {
+    max-width: 100% !important;
+  }
+
+  #jobList, #clientDropdown { 
+    display: none; 
+    position: absolute; 
+    width: 100%; 
+    z-index: 1000; 
+    background: white; 
+    border: 1.5px solid #cbd5e1; 
+    border-radius: 12px;
+    max-height: 250px; 
+    overflow-y: auto; 
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1); 
+  }
+
+  .dropdown-item { 
+    cursor: pointer; 
+    padding: 12px 14px; 
+    border-bottom: 1px solid #f1f5f9; 
+    font-size: 0.88rem; 
+    color: #334155; 
+  }
+
+  #dayDetailList { 
+    border: 1.5px solid #e2e8f0; 
+    border-radius: 12px; 
+    padding: 12px; 
+    background: #ffffff; 
+  }
+
+  td, th, span, small, p, div, strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* =========================================================
+     2. CSAPAT MÁTRIX TÁBLÁZAT (1. és 3. KÉP JAVÍTÁSA)
+     ========================================================= */
+  .table-container { 
+    overflow-x: auto !important; 
+    -webkit-overflow-scrolling: touch;
+    display: block; 
+    max-width: 100%; 
+    border-radius: 14px; 
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+  }
+
+  /* A Mátrix táblázat oszlopfejléceinek és szélességének védelme */
+  .matrix-container table,
+  .table-container.matrix-container table {
+    min-width: 850px !important;
+    table-layout: auto !important;
+  }
+
+  .matrix-container th,
+  .matrix-container td {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    padding: 6px 8px !important;
+    font-size: 0.78rem !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+
+  .matrix-container .sticky-col { 
+    position: sticky !important; 
+    left: 0 !important; 
+    background-color: #ffffff !important; 
+    z-index: 30 !important; 
+    min-width: 140px !important;
+    max-width: 160px !important;
+    border-right: 2px solid #e2e8f0 !important; 
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    text-align: left !important;
+  }
+
+  .overtime-cell { background-color: #fef2f2 !important; color: #dc2626 !important; font-weight: bold; }
+  .sunday-col { background-color: #f1f5f9 !important; font-weight: bold; }
+  .holiday-col { background-color: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
+
+  /* =========================================================
+     3. ALSÓ NAVIGÁCIÓ ÉS MOBIL ELRENDEZÉS (768px ALATT)
+     ========================================================= */
+  @media screen and (max-width: 768px) {
+    .navbar { display: none !important; }
+
+    body {
+      padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
     }
 
-    html, body {
-      overscroll-behavior-y: none; /* Webes gumi-pattogás kikapcsolása */
+    /* Bottom Navigation Bar */
+    .app-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(62px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1040;
+      box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
     }
 
-    body { 
-      background-color: #f8fafc; 
-      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; 
-      padding-bottom: 30px; 
-      padding-top: max(12px, env(safe-area-inset-top));
-      color: #0f172a;
-      line-height: 1.45;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Érintési visszajelzés: LETILTVA A MOZGÁS ÉS SKÁLÁZÁS RÁBÖKÉSKOR */
-    button, .btn, .nav-link, .card, .badge, .dropdown-item, .app-nav-item {
-      user-select: none;
-      touch-action: manipulation;
-      transform: none !important; /* Rugózás és ugrálás teljes letiltása */
-      transition: background-color 0.15s ease, color 0.15s ease !important;
-    }
-
-    /* Modern App Form elemek */
-    input, textarea, select, .form-control, .form-select {
-      user-select: text;
-      font-size: 16px !important;
-      font-family: inherit !important;
-      border-radius: 12px !important;
-      border: 1.5px solid #cbd5e1 !important;
-      padding: 10px 14px !important;
-      background-color: #ffffff !important;
-      box-shadow: none !important;
-    }
-
-    input:focus, textarea:focus, select:focus, .form-control:focus, .form-select:focus {
-      border-color: #2563eb !important;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-    }
-
-    .main-container { 
-      margin: 0 auto !important; 
-      transition: max-width 0.3s ease-in-out; 
-      width: 100%; 
-    }
-    .is-narrow-view { max-width: 650px !important; }
-    .is-wide-view { max-width: 98% !important; }
-
-    /* App Shell Kártyák */
-    .card {
-      border: 1px solid rgba(226, 232, 240, 0.9) !important;
-      border-radius: 18px !important;
-      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important;
-      margin-bottom: 20px;
-      background: #ffffff !important;
-    }
-
-    /* Modern, mélykék-palaszürke navigációs sáv */
-    .navbar-custom {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .navbar .nav-link {
+    .app-nav-item {
+      color: #64748b;
+      text-decoration: none !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      gap: 3px;
+      flex: 1;
+      height: 100%;
       cursor: pointer;
-      color: rgba(255, 255, 255, 0.75);
-      font-weight: 600;
-      transition: color 0.2s ease;
     }
 
-    .navbar .nav-link:hover,
-    .navbar .nav-link.active {
-      color: #ffffff !important;
+    .app-nav-item i { font-size: 1.25rem; }
+    .app-nav-item.active { color: #2563eb !important; }
+
+    /* 🎯 ADMIN & JÓVÁHAGYÁSOK MOBIL FEJLECEK (2. és 4. KÉP JAVÍTÁSA) */
+    #adm-tab .alert-warning .d-flex,
+    #app-tab .d-flex,
+    .card-body > .d-flex.justify-content-between {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
     }
 
-    .tab-content-item { display: none; }
-    .tab-content-item.is-active { display: block; }
-
-    /* Kereső kiemelése */
-    .search-box-highlight { 
-      background-color: #f0fdf4; 
-      border: 1.5px solid #16a34a; 
-      border-radius: 14px; 
-      padding: 15px; 
-      margin-bottom: 20px; 
+    #btnApproveAll {
+      width: 100% !important;
+      margin-top: 6px;
     }
 
-    /* Legördülők és form elemek kilógás elleni védelme mobilon */
-    .btn-group, select, .form-select, .input-group {
+    /* 🎯 LEZÁRT HÓNAPOK DEDIKÁLT MOBIL KÁRTYÁI (4. KÉP JAVÍTÁSA) */
+    #lockedMonthsContainer {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+
+    #lockedMonthsContainer .card {
+      display: flex !important;
+      flex-direction: row !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      width: 100% !important;
+      margin-bottom: 0 !important;
+      padding: 10px 14px !important;
+      border-radius: 12px !important;
+      background-color: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    /* Listák átalakítása kártyákká (Kivéve a Mátrixot) */
+    .table-container:not(.matrix-container) table thead {
+      display: none !important;
+    }
+
+    .table-container:not(.matrix-container) table, 
+    .table-container:not(.matrix-container) tbody, 
+    .table-container:not(.matrix-container) tr, 
+    .table-container:not(.matrix-container) td {
+      display: block !important;
+      width: 100% !important;
+    }
+
+    .table-container:not(.matrix-container) tr {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 16px !important;
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important;
+      margin-bottom: 12px !important;
+      padding: 12px 14px !important;
+    }
+
+    .table-container:not(.matrix-container) td {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      padding: 8px 0 !important;
+      border: none !important;
+      border-bottom: 1px solid #f1f5f9 !important;
+      font-size: 0.88rem !important;
+      text-align: right !important;
+      gap: 8px !important;
+    }
+
+    .table-container:not(.matrix-container) td:last-child {
+      border-bottom: none !important;
+    }
+
+    .table-container:not(.matrix-container) td::before {
+      content: attr(data-label);
+      font-weight: 700;
+      color: #64748b;
+      font-size: 0.78rem;
+      text-align: left !important;
+      padding-right: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Bottom Sheet Modals */
+    .modal-dialog {
+      margin: 0 !important;
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
       max-width: 100% !important;
     }
 
-    #jobList, #clientDropdown { 
-      display: none; 
-      position: absolute; 
-      width: 100%; 
-      z-index: 1000; 
-      background: white; 
-      border: 1.5px solid #cbd5e1; 
-      border-radius: 12px;
-      max-height: 250px; 
-      overflow-y: auto; 
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1); 
+    .modal-content {
+      border-radius: 24px 24px 0 0 !important;
+      border: none !important;
+      box-shadow: 0 -10px 25px rgba(15, 23, 42, 0.15) !important;
     }
+  }
 
-    .dropdown-item { 
-      cursor: pointer; 
-      padding: 12px 14px; 
-      border-bottom: 1px solid #f1f5f9; 
-      font-size: 0.88rem; 
-      color: #334155; 
+  @media screen and (min-width: 769px) {
+    .app-bottom-nav {
+      display: none !important;
     }
-    .dropdown-item:hover { background-color: #f8fafc; }
-
-    #dayDetailList { 
-      border: 1.5px solid #e2e8f0; 
-      border-radius: 12px; 
-      padding: 12px; 
-      background: #ffffff; 
-    }
-
-    /* Szöveg- és e-mail túlfolyás elleni védelem */
-    td, th, span, small, p, div, strong {
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-
-    /* =========================================================
-       2. TÁBLÁZATOK ÉS MÁTRIX NÉZET
-       ========================================================= */
-    .table-container { 
-      overflow-x: auto !important; 
-      -webkit-overflow-scrolling: touch;
-      display: block; 
-      max-width: 100%; 
-      border-radius: 14px; 
-      border: 1px solid #e2e8f0;
-      background: #ffffff;
-    }
-
-    .table thead th { 
-      position: sticky; 
-      top: 0; 
-      background-color: #f8fafc !important; 
-      z-index: 20; 
-    }
-
-    .sticky-col { 
-      position: sticky; 
-      left: 0; 
-      background-color: #fff !important; 
-      z-index: 10; 
-      border-right: 2px solid #e2e8f0 !important; 
-      white-space: nowrap; 
-    }
-
-    .overtime-cell { background-color: #fef2f2 !important; color: #dc2626 !important; font-weight: bold; }
-    .sunday-col { background-color: #f1f5f9 !important; font-weight: bold; }
-    .holiday-col { background-color: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
-
-    /* =========================================================
-       3. ALSÓ NAVIGÁCIÓ (BOTTOM BAR) ÉS MOBIL NATIVE ELRENDEZÉS
-       ========================================================= */
-    @media screen and (max-width: 768px) {
-      /* Felső webes menü elrejtése mobilon */
-      .navbar { display: none !important; }
-
-      /* Margó az alsó rögzített menü miatt */
-      body {
-        padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
-      }
-
-      /* Fixed Alsó Navigációs Sáv (Bottom Navigation Bar) */
-      .app-bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: calc(62px + env(safe-area-inset-bottom));
-        padding-bottom: env(safe-area-inset-bottom);
-        background: #ffffff;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 1040;
-        box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
-      }
-
-      .app-nav-item {
-        color: #64748b;
-        text-decoration: none !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.68rem;
-        font-weight: 700;
-        gap: 3px;
-        flex: 1;
-        height: 100%;
-        cursor: pointer;
-      }
-
-      .app-nav-item i {
-        font-size: 1.25rem;
-      }
-
-      .app-nav-item.active {
-        color: #2563eb !important;
-      }
-
-      /* Sima listás táblázatok átalakítása App Kártyákká */
-      .table-container:not(.matrix-container) table thead {
-        display: none !important;
-      }
-
-      .table-container:not(.matrix-container) table, 
-      .table-container:not(.matrix-container) tbody, 
-      .table-container:not(.matrix-container) tr, 
-      .table-container:not(.matrix-container) td {
-        display: block !important;
-        width: 100% !important;
-      }
-
-      .table-container:not(.matrix-container) tr {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 16px !important;
-        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important;
-        margin-bottom: 12px !important;
-        padding: 12px 14px !important;
-      }
-
-      .table-container:not(.matrix-container) td {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        padding: 8px 0 !important;
-        border: none !important;
-        border-bottom: 1px solid #f1f5f9 !important;
-        font-size: 0.88rem !important;
-        text-align: right !important;
-        gap: 8px !important;
-      }
-
-      .table-container:not(.matrix-container) td:last-child {
-        border-bottom: none !important;
-      }
-
-      .table-container:not(.matrix-container) td::before {
-        content: attr(data-label);
-        font-weight: 700;
-        color: #64748b;
-        font-size: 0.78rem;
-        text-align: left !important;
-        padding-right: 10px;
-        flex-shrink: 0;
-      }
-
-      .sticky-col {
-        position: static !important;
-        border-right: none !important;
-      }
-
-      /* Modalok átalakítása felnyíló alsó lappá (Bottom Sheet) */
-      .modal-dialog {
-        margin: 0 !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        max-width: 100% !important;
-      }
-
-      .modal-content {
-        border-radius: 24px 24px 0 0 !important;
-        border: none !important;
-        box-shadow: 0 -10px 25px rgba(15, 23, 42, 0.15) !important;
-      }
-    }
-
-    /* Asztali gépen elrejtjük az alsó sávot */
-    @media screen and (min-width: 769px) {
-      .app-bottom-nav {
-        display: none !important;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 
 <body>
