@@ -74,6 +74,19 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
     }
 
+    /* Különleges Munkavégzés Kapcsolók */
+    .form-switch .form-check-input {
+      width: 2.6em !important;
+      height: 1.4em !important;
+      cursor: pointer;
+      margin-top: 0 !important;
+    }
+
+    .form-switch .form-check-input:checked {
+      background-color: #2563eb !important;
+      border-color: #2563eb !important;
+    }
+
     .main-container { 
       margin: 0 auto !important; 
       transition: max-width 0.3s ease-in-out; 
@@ -150,7 +163,6 @@
       background: #ffffff; 
     }
 
-    /* RÖGZÍTETT ÓRÁK ELEMEI A RÖGZÍTÉS FÜLÖN (2. KÉP JAVÍTÁSA) */
     #dayDetailList .text-end {
       white-space: nowrap !important;
       flex-shrink: 0 !important;
@@ -339,7 +351,7 @@
         flex-shrink: 0;
       }
 
-      /* 🎯 ÜRES TÁBLÁZAT ÁLLAPOTOK KÖZÉPRE ZÁRÁSA (1. KÉP JAVÍTÁSA) */
+      /* ÜRES TÁBLÁZAT ÁLLAPOTOK KÖZÉPRE ZÁRÁSA */
       .table-container:not(.matrix-container) td[colspan],
       #leaderRequestTableBody td[colspan],
       #requestTableBody td[colspan] {
@@ -357,7 +369,7 @@
         display: none !important;
       }
 
-      /* 🎯 STATISZTIKA FÜL: NEVEK ÉS NÉZETEK SZŐVETI CSÚSZÁSÁNAK JAVÍTÁSA (3. KÉP JAVÍTÁSA) */
+      /* STATISZTIKA FÜL */
       #mList .table-container td,
       #mList .table-container td * {
         word-break: normal !important;
@@ -490,16 +502,21 @@
         <input class="form-control" type="number" id="hours" step="0.25" min="0" placeholder="0.00">
       </div>
 
+      <!-- KÜLÖNLEGES MUNKAVÉGZÉS: MOBILBARÁT FORM-SWITCH ELEMEK -->
       <div class="mb-3">
         <label class="form-label small fw-bold">Különleges munkavégzés (opcionális):</label>
-        <div class="d-flex flex-wrap gap-3 small">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="hetvegi_esemeny_chk">
-            <label class="form-check-label" for="hetvegi_esemeny_chk">Hétvégi esemény</label>
+        <div class="d-flex flex-column gap-2">
+          <div class="form-check form-switch p-2 px-3 bg-white rounded-3 border d-flex align-items-center justify-content-between m-0">
+            <label class="form-check-label small fw-semibold text-dark mb-0 cursor-pointer d-flex align-items-center" for="hetvegi_esemeny_chk">
+              <i class="bi bi-calendar-event me-2 text-primary fs-6"></i> Hétvégi esemény
+            </label>
+            <input class="form-check-input m-0" type="checkbox" role="switch" id="hetvegi_esemeny_chk">
           </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="ejszakai_esemeny_chk">
-            <label class="form-check-label" for="ejszakai_esemeny_chk">Éjszakai esemény</label>
+          <div class="form-check form-switch p-2 px-3 bg-white rounded-3 border d-flex align-items-center justify-content-between m-0">
+            <label class="form-check-label small fw-semibold text-dark mb-0 cursor-pointer d-flex align-items-center" for="ejszakai_esemeny_chk">
+              <i class="bi bi-moon-stars me-2 fs-6" style="color: #6366f1;"></i> Éjszakai esemény
+            </label>
+            <input class="form-check-input m-0" type="checkbox" role="switch" id="ejszakai_esemeny_chk">
           </div>
         </div>
       </div>
@@ -580,7 +597,7 @@
           <tr><th>Név</th><th>Dátum</th><th>Indok</th><th class="text-center">Művelet</th></tr>
         </thead>
         <tbody id="leaderRequestTableBody">
-          <tr><td colspan="4" class="text-center text-muted p-3">Nincs jóváhagyásra váró beosztotti kérelem.</td></tr>
+          <tr><td colspan="4" class="text-center text-muted p-3">Nincs jóváhagyásra váró kérelem.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1664,7 +1681,7 @@
           recentMap.set(l.munkaszam, { id: l.munkaszam, vevo: l.vevo || "", munka: l.munka || "" });
         }
       });
-      const recent = Array.from(recentMap.values()).slice(0, 8);
+      const recent = Array.from(recentMap.values()).slice(0, 5);
 
       area.innerHTML = `
         <div id="globalFavSection" class="mb-3" style="${global.length > 0 ? '' : 'display:none;'}">
@@ -1675,13 +1692,13 @@
           </select>
         </div>
         <div id="historyFavSection" class="mb-3" style="${recent.length > 0 ? '' : 'display:none;'}">
-          <label class="form-label fw-bold small text-muted mb-1"><i class="bi bi-clock-history me-1"></i> ELŐZMÉNYEK:</label>
-          <div id="favButtons" class="d-flex flex-wrap gap-1"></div>
+          <label class="form-label fw-bold small text-muted mb-2"><i class="bi bi-clock-history me-1"></i> ELŐZMÉNYEK:</label>
+          <div id="favButtons" class="d-flex flex-column gap-1"></div>
         </div>`;
 
       if (recent.length > 0) {
         const hButtons = document.getElementById('favButtons');
-        recent.forEach(j => { hButtons.appendChild(createJobBtn(j, "btn-light border")); });
+        recent.forEach(j => { hButtons.appendChild(createJobBtn(j)); });
       }
 
     } catch (e) {
@@ -1689,11 +1706,25 @@
     }
   }
 
-  function createJobBtn(j, color) {
+  /* 🎯 ELŐZMÉNYEK: TELJES PROJEKTNÉV MEGJELENÍTÉSE LISTÁS KÁRTYÁBAN */
+  function createJobBtn(j) {
     const b = document.createElement('button'); 
-    b.className = `btn btn-sm ${color} rounded-pill py-0 px-2`;
-    b.innerHTML = `<span><strong>${j.id}</strong> <small class="text-muted">${j.munka.substring(0,10)}</small></span>`;
+    b.type = 'button';
+    b.className = 'btn btn-light border text-start w-100 p-2.5 rounded-3 mb-1 d-flex justify-content-between align-items-center';
     b.onclick = () => setJobSelection(j.id, j.vevo, j.munka);
+    b.innerHTML = `
+      <div class="min-w-0 pe-2">
+        <div class="small mb-1">
+          <strong class="text-primary">${escapeHtml(j.id)}</strong> 
+          <span class="text-muted mx-1">|</span> 
+          <span class="fw-bold text-dark">${escapeHtml(j.vevo || "Belső")}</span>
+        </div>
+        <div class="small text-secondary" style="font-size: 0.82rem; line-height: 1.35;">
+          ${escapeHtml(j.munka || "Nincs megnevezés")}
+        </div>
+      </div>
+      <i class="bi bi-plus-lg text-primary fs-6 flex-shrink-0 ms-2"></i>
+    `;
     return b;
   }
 
