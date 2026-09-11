@@ -27,30 +27,53 @@
 
   <style>
     /* =========================================================
-       1. ALAPBEÁLLÍTÁSOK ÉS MOBIL TOUCH
+       1. NATÍV APP TIPOGRÁFIA ÉS CLEAN ALAPOK (NINCS RUGÓZÁS)
        ========================================================= */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
     * {
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
       box-sizing: border-box;
     }
 
-    body { 
-      background-color: #f4f7f6; 
-      font-family: 'Segoe UI', Tahoma, sans-serif; 
-      padding-bottom: 30px; 
-      padding-top: max(10px, env(safe-area-inset-top));
-      line-height: 1.5;
+    html, body {
+      overscroll-behavior-y: none; /* Webes gumi-pattogás kikapcsolása */
     }
 
-    button, .nav-link, .card {
+    body { 
+      background-color: #f8fafc; 
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important; 
+      padding-bottom: 30px; 
+      padding-top: max(12px, env(safe-area-inset-top));
+      color: #0f172a;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Érintési visszajelzés: LETILTVA A MOZGÁS ÉS SKÁLÁZÁS RÁBÖKÉSKOR */
+    button, .btn, .nav-link, .card, .badge, .dropdown-item, .app-nav-item {
       user-select: none;
       touch-action: manipulation;
+      transform: none !important; /* Rugózás és ugrálás teljes letiltása */
+      transition: background-color 0.15s ease, color 0.15s ease !important;
     }
 
-    input, textarea, select {
+    /* Modern App Form elemek */
+    input, textarea, select, .form-control, .form-select {
       user-select: text;
       font-size: 16px !important;
+      font-family: inherit !important;
+      border-radius: 12px !important;
+      border: 1.5px solid #cbd5e1 !important;
+      padding: 10px 14px !important;
+      background-color: #ffffff !important;
+      box-shadow: none !important;
+    }
+
+    input:focus, textarea:focus, select:focus, .form-control:focus, .form-select:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
     }
 
     .main-container { 
@@ -61,16 +84,20 @@
     .is-narrow-view { max-width: 650px !important; }
     .is-wide-view { max-width: 98% !important; }
 
+    /* App Shell Kártyák */
     .card {
-      border: none;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+      border: 1px solid rgba(226, 232, 240, 0.9) !important;
+      border-radius: 18px !important;
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important;
       margin-bottom: 20px;
+      background: #ffffff !important;
     }
 
     /* Modern, mélykék-palaszürke navigációs sáv */
     .navbar-custom {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     .navbar .nav-link {
@@ -90,9 +117,9 @@
 
     /* Kereső kiemelése */
     .search-box-highlight { 
-      background-color: #e6f4ea; 
-      border: 2px solid #198754; 
-      border-radius: 10px; 
+      background-color: #f0fdf4; 
+      border: 1.5px solid #16a34a; 
+      border-radius: 14px; 
       padding: 15px; 
       margin-bottom: 20px; 
     }
@@ -108,27 +135,33 @@
       width: 100%; 
       z-index: 1000; 
       background: white; 
-      border: 1px solid #dee2e6; 
-      border-radius: 8px;
+      border: 1.5px solid #cbd5e1; 
+      border-radius: 12px;
       max-height: 250px; 
       overflow-y: auto; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1); 
     }
 
     .dropdown-item { 
       cursor: pointer; 
-      padding: 10px; 
-      border-bottom: 1px solid #f1f3f5; 
+      padding: 12px 14px; 
+      border-bottom: 1px solid #f1f5f9; 
       font-size: 0.88rem; 
-      color: #333; 
+      color: #334155; 
     }
-    .dropdown-item:hover { background-color: #f8f9fa; }
+    .dropdown-item:hover { background-color: #f8fafc; }
 
     #dayDetailList { 
-      border: 1px solid #dee2e6; 
-      border-radius: 8px; 
-      padding: 10px; 
+      border: 1.5px solid #e2e8f0; 
+      border-radius: 12px; 
+      padding: 12px; 
       background: #ffffff; 
+    }
+
+    /* Szöveg- és e-mail túlfolyás elleni védelem */
+    td, th, span, small, p, div, strong {
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     /* =========================================================
@@ -139,13 +172,15 @@
       -webkit-overflow-scrolling: touch;
       display: block; 
       max-width: 100%; 
-      border-radius: 8px; 
+      border-radius: 14px; 
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
     }
 
     .table thead th { 
       position: sticky; 
       top: 0; 
-      background-color: #f8f9fa !important; 
+      background-color: #f8fafc !important; 
       z-index: 20; 
     }
 
@@ -154,18 +189,67 @@
       left: 0; 
       background-color: #fff !important; 
       z-index: 10; 
-      border-right: 2px solid #dee2e6 !important; 
+      border-right: 2px solid #e2e8f0 !important; 
       white-space: nowrap; 
     }
 
-    .overtime-cell { background-color: #fff3f3 !important; color: #dc3545 !important; font-weight: bold; }
-    .sunday-col { background-color: #e9ecef !important; font-weight: bold; }
-    .holiday-col { background-color: #f8f9fa !important; border: 1px solid #dee2e6 !important; }
+    .overtime-cell { background-color: #fef2f2 !important; color: #dc2626 !important; font-weight: bold; }
+    .sunday-col { background-color: #f1f5f9 !important; font-weight: bold; }
+    .holiday-col { background-color: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
 
     /* =========================================================
-       3. MOBIL KÁRTYA NÉZET (768px ALATT)
+       3. ALSÓ NAVIGÁCIÓ (BOTTOM BAR) ÉS MOBIL NATIVE ELRENDEZÉS
        ========================================================= */
     @media screen and (max-width: 768px) {
+      /* Felső webes menü elrejtése mobilon */
+      .navbar { display: none !important; }
+
+      /* Margó az alsó rögzített menü miatt */
+      body {
+        padding-bottom: calc(75px + env(safe-area-inset-bottom)) !important;
+      }
+
+      /* Fixed Alsó Navigációs Sáv (Bottom Navigation Bar) */
+      .app-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(62px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 1040;
+        box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
+      }
+
+      .app-nav-item {
+        color: #64748b;
+        text-decoration: none !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.68rem;
+        font-weight: 700;
+        gap: 3px;
+        flex: 1;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      .app-nav-item i {
+        font-size: 1.25rem;
+      }
+
+      .app-nav-item.active {
+        color: #2563eb !important;
+      }
+
+      /* Sima listás táblázatok átalakítása App Kártyákká */
       .table-container:not(.matrix-container) table thead {
         display: none !important;
       }
@@ -180,20 +264,20 @@
 
       .table-container:not(.matrix-container) tr {
         background: #ffffff !important;
-        border: 1px solid #dee2e6 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03) !important;
         margin-bottom: 12px !important;
-        padding: 10px 14px !important;
+        padding: 12px 14px !important;
       }
 
       .table-container:not(.matrix-container) td {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 6px 0 !important;
+        padding: 8px 0 !important;
         border: none !important;
-        border-bottom: 1px solid #f1f3f5 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
         font-size: 0.88rem !important;
         text-align: right !important;
         gap: 8px !important;
@@ -207,8 +291,8 @@
         content: attr(data-label);
         font-weight: 700;
         color: #64748b;
-        font-size: 0.8rem;
-        text-align: left;
+        font-size: 0.78rem;
+        text-align: left !important;
         padding-right: 10px;
         flex-shrink: 0;
       }
@@ -217,13 +301,36 @@
         position: static !important;
         border-right: none !important;
       }
+
+      /* Modalok átalakítása felnyíló alsó lappá (Bottom Sheet) */
+      .modal-dialog {
+        margin: 0 !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        max-width: 100% !important;
+      }
+
+      .modal-content {
+        border-radius: 24px 24px 0 0 !important;
+        border: none !important;
+        box-shadow: 0 -10px 25px rgba(15, 23, 42, 0.15) !important;
+      }
     }
-</style>
+
+    /* Asztali gépen elrejtjük az alsó sávot */
+    @media screen and (min-width: 769px) {
+      .app-bottom-nav {
+        display: none !important;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- NAVIGÁCIÓS SÁV -->
+<!-- ASZTALI NAVIGÁCIÓS SÁV (Mobilon automatikusan rejtve) -->
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom mb-4 shadow-sm">
   <div class="container">
     <a class="navbar-brand fw-bold" style="cursor: pointer;">⏱️ Óranyilvántartás Portal</a>
@@ -539,6 +646,30 @@
   </div>
 </div>
 
+<!-- RÖGZÍTETT ALSÓ NAVIGÁCIÓS SÁV (MOBIL APP FEEL) -->
+<nav class="app-bottom-nav">
+  <div class="app-nav-item active" id="mbTabRec" onclick="switchMobileTab('rec', this)">
+    <i class="bi bi-pencil-square"></i>
+    <span>Rögzítés</span>
+  </div>
+  <div class="app-nav-item" id="mbTabStat" onclick="switchMobileTab('stat', this)">
+    <i class="bi bi-bar-chart-line"></i>
+    <span>Statisztika</span>
+  </div>
+  <div class="app-nav-item" id="mbTabTeam" onclick="switchMobileTab('team', this)">
+    <i class="bi bi-people"></i>
+    <span>Csapat</span>
+  </div>
+  <div class="app-nav-item" id="mbTabApp" onclick="switchMobileTab('app', this)">
+    <i class="bi bi-check2-square"></i>
+    <span>Jóváhagyás</span>
+  </div>
+  <div class="app-nav-item" id="mbTabAdm" onclick="switchMobileTab('adm', this)">
+    <i class="bi bi-gear"></i>
+    <span>Admin</span>
+  </div>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -585,96 +716,93 @@
   }
 
   window.onload = async () => {
-  try {
-    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-    if (sessionError) throw sessionError;
+    try {
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError) throw sessionError;
 
-    if (!session) {
-      document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;"><h3>Átirányítás a Google belépéshez...</h3></div>';
-      await loginWithGoogle();
-      return;
+      if (!session) {
+        document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;"><h3>Átirányítás a Google belépéshez...</h3></div>';
+        await loginWithGoogle();
+        return;
+      }
+
+      const userEmail = session.user.email.toLowerCase().trim();
+
+      const { data: profiles, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('*');
+
+      if (profileError) throw profileError;
+
+      const profile = (profiles || []).find(p => (p.email || '').toLowerCase().trim() === userEmail);
+
+      if (!profile) {
+        document.body.innerHTML = `
+          <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; text-align:center; padding:20px; background-color:#f4f7f6;">
+            <i class="bi bi-shield-lock-fill text-danger" style="font-size: 4rem; margin-bottom: 15px;"></i>
+            <h3 class="text-danger fw-bold">Hozzáférés megtagadva</h3>
+            <p class="text-muted mt-2">Az e-mail címed (<strong>${userEmail}</strong>) nincs regisztrálva a belső profilok között.</p>
+            <p class="small text-muted mb-4">Csak aktív munkatársi profillal rendelkező felhasználók rögzíthetnek órát. Kérlek, jelezd a problémát az adminisztrátornak vagy a HR-nek!</p>
+            <button class="btn btn-outline-secondary fw-bold shadow-sm" onclick="logout()">
+              <i class="bi bi-box-arrow-right me-1"></i> Kijelentkezés
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      currentUserProfile = profile;
+      userStaticData = {
+        name: profile.nev,
+        email: profile.email,
+        pos: profile.pozicio || 'Munkatárs',
+        role: profile.jogosultsag || 'user',
+        group: profile.csoport || ''
+      };
+
+      if (typeof updateTabVisibility === "function") {
+        updateTabVisibility(currentUserProfile);
+      }
+
+      const userNameEl = document.getElementById('loggedUserName');
+      if (userNameEl) userNameEl.innerText = profile.nev || userEmail;
+      
+      const userGroupEl = document.getElementById('userGroupTag');
+      if (userGroupEl) {
+        const csoport = profile.csoport || 'Munkatárs';
+        const jog = profile.jogosultsag ? ` [${profile.jogosultsag.toUpperCase()}]` : '';
+        userGroupEl.innerText = csoport + jog;
+      }
+
+      const now = new Date();
+      const d = now.toISOString().split('T')[0];
+      const currentMonth = d.substring(0, 7);
+      
+      if (document.getElementById('datePicker')) document.getElementById('datePicker').value = d;
+      if (document.getElementById('teamMonth')) document.getElementById('teamMonth').value = currentMonth;
+      if (document.getElementById('adminTargetMonth')) document.getElementById('adminTargetMonth').value = currentMonth;
+
+      await loadMasterProjects(); 
+      await loadHolidays(); 
+      
+      updateJobList(); 
+      await loadLockedMonths(); 
+      if (typeof loadQuickSelection === "function") loadQuickSelection(); 
+      if (typeof loadPendingRequests === "function") await loadPendingRequests();
+      
+      if (typeof allMasterProjects !== 'undefined' && Array.isArray(allMasterProjects)) {
+        allClients = [...new Set(allMasterProjects.map(p => p.vevo).filter(v => v && v !== "N/A" && v !== "Ismeretlen"))].sort((a, b) => a.localeCompare(b, 'hu'));
+      }
+
+      if (typeof handleUrlParameters === "function") {
+        await handleUrlParameters();
+      }
+
+    } catch(e) { 
+      console.error("Inicializálási hiba:", e); 
+      showModal("Hiba a betöltéskor: " + e.message, "Hiba");
     }
-
-    const userEmail = session.user.email.toLowerCase().trim();
-
-    // Profilok lekérése URL-szűrés nélkül (megelőzi a pontot tartalmazó e-mail címek miatti 400 Bad Request hibát)
-    const { data: profiles, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('*');
-
-    if (profileError) throw profileError;
-
-    // A bejelentkezett felhasználó megkeresése JavaScript-ben
-    const profile = (profiles || []).find(p => (p.email || '').toLowerCase().trim() === userEmail);
-
-    // Szigorú hozzáférés-ellenőrzés: ha nincs profil az adatbázisban
-    if (!profile) {
-      document.body.innerHTML = `
-        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; text-align:center; padding:20px; background-color:#f4f7f6;">
-          <i class="bi bi-shield-lock-fill text-danger" style="font-size: 4rem; margin-bottom: 15px;"></i>
-          <h3 class="text-danger fw-bold">Hozzáférés megtagadva</h3>
-          <p class="text-muted mt-2">Az e-mail címed (<strong>${userEmail}</strong>) nincs regisztrálva a belső profilok között.</p>
-          <p class="small text-muted mb-4">Csak aktív munkatársi profillal rendelkező felhasználók rögzíthetnek órát. Kérlek, jelezd a problémát az adminisztrátornak vagy a HR-nek!</p>
-          <button class="btn btn-outline-secondary fw-bold shadow-sm" onclick="logout()">
-            <i class="bi bi-box-arrow-right me-1"></i> Kijelentkezés
-          </button>
-        </div>
-      `;
-      return;
-    }
-
-    currentUserProfile = profile;
-    userStaticData = {
-      name: profile.nev,
-      email: profile.email,
-      pos: profile.pozicio || 'Munkatárs',
-      role: profile.jogosultsag || 'user',
-      group: profile.csoport || ''
-    };
-
-    if (typeof updateTabVisibility === "function") {
-      updateTabVisibility(currentUserProfile);
-    }
-
-    const userNameEl = document.getElementById('loggedUserName');
-    if (userNameEl) userNameEl.innerText = profile.nev || userEmail;
-    
-    const userGroupEl = document.getElementById('userGroupTag');
-    if (userGroupEl) {
-      const csoport = profile.csoport || 'Munkatárs';
-      const jog = profile.jogosultsag ? ` [${profile.jogosultsag.toUpperCase()}]` : '';
-      userGroupEl.innerText = csoport + jog;
-    }
-
-    const now = new Date();
-    const d = now.toISOString().split('T')[0];
-    const currentMonth = d.substring(0, 7);
-    
-    if (document.getElementById('datePicker')) document.getElementById('datePicker').value = d;
-    if (document.getElementById('teamMonth')) document.getElementById('teamMonth').value = currentMonth;
-    if (document.getElementById('adminTargetMonth')) document.getElementById('adminTargetMonth').value = currentMonth;
-
-    await loadMasterProjects(); 
-    await loadHolidays(); 
-    
-    updateJobList(); 
-    await loadLockedMonths(); 
-    if (typeof loadQuickSelection === "function") loadQuickSelection(); 
-    if (typeof loadPendingRequests === "function") await loadPendingRequests();
-    
-    if (typeof allMasterProjects !== 'undefined' && Array.isArray(allMasterProjects)) {
-      allClients = [...new Set(allMasterProjects.map(p => p.vevo).filter(v => v && v !== "N/A" && v !== "Ismeretlen"))].sort((a, b) => a.localeCompare(b, 'hu'));
-    }
-
-    if (typeof handleUrlParameters === "function") {
-      await handleUrlParameters();
-    }
-
-  } catch(e) { 
-    console.error("Inicializálási hiba:", e); 
-    showModal("Hiba a betöltéskor: " + e.message, "Hiba");
-  }
-};
+  };
 
   async function loadMasterProjects() {
     const { data, error } = await supabaseClient
@@ -740,6 +868,8 @@
     }
     if (menuEl) menuEl.classList.add('active');
 
+    syncBottomNavActiveState(tabName);
+
     const c = document.getElementById('appContainer');
     if (c) {
       if (tabName === 'team' || tabName === 'adm' || tabName === 'app') { 
@@ -757,6 +887,32 @@
         c.classList.remove('is-wide-view');
         c.classList.add('is-narrow-view');
       }
+    }
+  }
+
+  function switchMobileTab(tabName, element) {
+    document.querySelectorAll('.app-nav-item').forEach(item => item.classList.remove('active'));
+    if (element) element.classList.add('active');
+    
+    if ('vibrate' in navigator) {
+      navigator.vibrate(8);
+    }
+    switchTab(tabName);
+  }
+
+  function syncBottomNavActiveState(tabName) {
+    document.querySelectorAll('.app-nav-item').forEach(item => item.classList.remove('active'));
+    const map = {
+      'rec': 'mbTabRec',
+      'stat': 'mbTabStat',
+      'team': 'mbTabTeam',
+      'app': 'mbTabApp',
+      'adm': 'mbTabAdm'
+    };
+    const targetId = map[tabName];
+    if (targetId) {
+      const el = document.getElementById(targetId);
+      if (el) el.classList.add('active');
     }
   }
 
@@ -881,170 +1037,164 @@
     });
   }
 
-function parseLeaveHours(leave, dailyLimit) {
-  const limit = Number(dailyLimit) || 8;
-  const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || leave.request_type || '').toLowerCase().trim();
+  function parseLeaveHours(leave, dailyLimit) {
+    const limit = Number(dailyLimit) || 8;
+    const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || leave.request_type || '').toLowerCase().trim();
 
-  // Nem óralapú távollétek (SZ, B, A, K, FN, T) -> Teljes napi keret (pl. 8 óra)
-  const isHourly = rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
-                   rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr');
+    const isHourly = rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
+                     rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr');
 
-  if (!isHourly) return limit;
+    if (!isHourly) return limit;
 
-  // 1. Direct oraszam mező ellenőrzése
-  const directOraszam = Number(leave.oraszam || leave.horas || 0);
-  if (directOraszam > 0) return directOraszam;
+    const directOraszam = Number(leave.oraszam || leave.horas || 0);
+    if (directOraszam > 0) return directOraszam;
 
-  // 2. Külön kezdő és végidő mezők ellenőrzése (pl. "09:00", "12:00")
-  const startStr = String(leave.kezdo_ido || leave.start_time || leave.kezdeti_ido || '').trim();
-  const endStr = String(leave.veg_ido || leave.end_time || leave.vegso_ido || '').trim();
+    const startStr = String(leave.kezdo_ido || leave.start_time || leave.kezdeti_ido || '').trim();
+    const endStr = String(leave.veg_ido || leave.end_time || leave.vegso_ido || '').trim();
 
-  if (startStr && endStr && startStr.includes(':') && endStr.includes(':')) {
-    const [h1, m1] = startStr.split(':').map(n => parseInt(n, 10) || 0);
-    const [h2, m2] = endStr.split(':').map(n => parseInt(n, 10) || 0);
-    const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-    if (diffMins > 0) return diffMins / 60;
-  }
-
-  // 3. Időintervallum szöveg kiolvasása (pl. "09:00 - 12:00" vagy "09:00-12:00")
-  const intervalStr = String(leave.ido || leave.időtartam || leave.ido_intervallum || '').trim();
-  if (intervalStr.includes('-')) {
-    const parts = intervalStr.split('-').map(s => s.trim());
-    if (parts.length === 2 && parts[0].includes(':') && parts[1].includes(':')) {
-      const [h1, m1] = parts[0].split(':').map(n => parseInt(n, 10) || 0);
-      const [h2, m2] = parts[1].split(':').map(n => parseInt(n, 10) || 0);
+    if (startStr && endStr && startStr.includes(':') && endStr.includes(':')) {
+      const [h1, m1] = startStr.split(':').map(n => parseInt(n, 10) || 0);
+      const [h2, m2] = endStr.split(':').map(n => parseInt(n, 10) || 0);
       const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
       if (diffMins > 0) return diffMins / 60;
     }
+
+    const intervalStr = String(leave.ido || leave.időtartam || leave.ido_intervallum || '').trim();
+    if (intervalStr.includes('-')) {
+      const parts = intervalStr.split('-').map(s => s.trim());
+      if (parts.length === 2 && parts[0].includes(':') && parts[1].includes(':')) {
+        const [h1, m1] = parts[0].split(':').map(n => parseInt(n, 10) || 0);
+        const [h2, m2] = parts[1].split(':').map(n => parseInt(n, 10) || 0);
+        const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+        if (diffMins > 0) return diffMins / 60;
+      }
+    }
+
+    return 0;
   }
-
-  return 0;
-}
-
 
   async function updateJobList() {
-  const dv = document.getElementById('datePicker').value;
-  const hoursDisplay = document.getElementById('dayHours');
-  const div = document.getElementById('dayDetailList');
+    const dv = document.getElementById('datePicker').value;
+    const hoursDisplay = document.getElementById('dayHours');
+    const div = document.getElementById('dayDetailList');
 
-  if (!dv) return;
-  hoursDisplay.innerText = "...";
+    if (!dv) return;
+    hoursDisplay.innerText = "...";
 
-  try {
-    const emailClean = (currentUserProfile.email || '').toLowerCase().trim();
-    const normalizedDv = typeof normalizeDateStr === 'function' ? normalizeDateStr(dv) : dv;
+    try {
+      const emailClean = (currentUserProfile.email || '').toLowerCase().trim();
+      const normalizedDv = typeof normalizeDateStr === 'function' ? normalizeDateStr(dv) : dv;
 
-    const [logsRes, leaveRes] = await Promise.all([
-      supabaseClient.from('work_logs').select('*').ilike('user_email', emailClean).eq('datum', normalizedDv),
-      supabaseClient.from('leave_requests').select('*').ilike('user_email', emailClean)
-    ]);
+      const [logsRes, leaveRes] = await Promise.all([
+        supabaseClient.from('work_logs').select('*').ilike('user_email', emailClean).eq('datum', normalizedDv),
+        supabaseClient.from('leave_requests').select('*').ilike('user_email', emailClean)
+      ]);
 
-    if (logsRes.error) throw logsRes.error;
+      if (logsRes.error) throw logsRes.error;
 
-    const dailyLimit = Number(currentUserProfile.napi_limit) || 8;
+      const dailyLimit = Number(currentUserProfile.napi_limit) || 8;
 
-    const activeLeaves = (leaveRes.data || []).filter(req => {
-      const st = String(req.status || req.statusz || req.allapot || '').toLowerCase().trim();
-      const isApproved = ['approved', 'elfogadva', 'jóváhagyva', 'jóváhagyott'].some(a => st.includes(a));
-      if (!isApproved) return false;
+      const activeLeaves = (leaveRes.data || []).filter(req => {
+        const st = String(req.status || req.statusz || req.allapot || '').toLowerCase().trim();
+        const isApproved = ['approved', 'elfogadva', 'jóváhagyva', 'jóváhagyott'].some(a => st.includes(a));
+        if (!isApproved) return false;
 
-      // HO kiszűrése
-      const rawType = String(req.tipus || req.jelleg || req.tavollet_tipusa || '').toLowerCase().trim();
-      if (rawType.includes('home') || rawType.includes('office') || rawType === 'ho' || rawType.includes('otthoni')) return false;
+        const rawType = String(req.tipus || req.jelleg || req.tavollet_tipusa || '').toLowerCase().trim();
+        if (rawType.includes('home') || rawType.includes('office') || rawType === 'ho' || rawType.includes('otthoni')) return false;
 
-      const rawStart = req.kezdo_datum || req.datum || req.start_date;
-      const rawEnd = req.veg_datum || req.kezdo_datum || req.datum || req.end_date;
+        const rawStart = req.kezdo_datum || req.datum || req.start_date;
+        const rawEnd = req.veg_datum || req.kezdo_datum || req.datum || req.end_date;
 
-      const start = typeof normalizeDateStr === 'function' ? normalizeDateStr(rawStart) : String(rawStart).substring(0, 10);
-      const end = typeof normalizeDateStr === 'function' ? normalizeDateStr(rawEnd) : String(rawEnd).substring(0, 10);
+        const start = typeof normalizeDateStr === 'function' ? normalizeDateStr(rawStart) : String(rawStart).substring(0, 10);
+        const end = typeof normalizeDateStr === 'function' ? normalizeDateStr(rawEnd) : String(rawEnd).substring(0, 10);
 
-      return normalizedDv >= start && normalizedDv <= end;
-    });
+        return normalizedDv >= start && normalizedDv <= end;
+      });
 
-    const groupedMap = {};
-    (logsRes.data || []).forEach(item => {
-      const key = `${item.munkaszam}_${item.vevo || ''}_${item.munka || ''}`;
-      if (!groupedMap[key]) {
-        groupedMap[key] = { ...item, oraszam: 0, extraIds: [] };
-      } else {
-        groupedMap[key].extraIds.push(item.id);
-      }
-      groupedMap[key].oraszam += Number(item.oraszam || 0);
-    });
+      const groupedMap = {};
+      (logsRes.data || []).forEach(item => {
+        const key = `${item.munkaszam}_${item.vevo || ''}_${item.munka || ''}`;
+        if (!groupedMap[key]) {
+          groupedMap[key] = { ...item, oraszam: 0, extraIds: [] };
+        } else {
+          groupedMap[key].extraIds.push(item.id);
+        }
+        groupedMap[key].oraszam += Number(item.oraszam || 0);
+      });
 
-    const logs = Object.values(groupedMap);
-    let dailyTotal = logs.reduce((sum, item) => sum + item.oraszam, 0);
+      const logs = Object.values(groupedMap);
+      let dailyTotal = logs.reduce((sum, item) => sum + item.oraszam, 0);
 
-    let htmlItems = logs.map(i => {
-      const allIds = [i.id, ...i.extraIds].join(',');
-      return `
-        <div class="d-flex justify-content-between align-items-center py-2 mb-1 border-bottom">
-          <div class="flex-grow-1 min-w-0 pe-2">
-            <div class="small">
-              <strong class="text-primary">${escapeHtml(i.munkaszam)}</strong> 
-              <span class="text-muted mx-1">|</span> 
-              <small class="text-dark">${escapeHtml(i.vevo || "")}</small>
-            </div>
-            <div class="text-muted small text-truncate" style="margin-top: -2px;">
-              ${escapeHtml(i.munka || "Nincs megnevezés")}
-            </div>
-          </div>
-          <div class="text-end d-flex align-items-center justify-content-end" style="min-width: 90px;">
-            <strong class="fs-6 me-2">${Number(i.oraszam).toFixed(2)}</strong>
-            <button class="btn btn-sm btn-link text-info p-1 me-1" onclick="promptEditHour('${allIds}', '${i.munkaszam}', ${i.oraszam})" title="Szerkesztés">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-sm btn-link text-danger p-1" onclick="deleteEntry('${allIds}', '${i.munkaszam}')" title="Törlés">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-        </div>
-      `;
-    });
-
-    activeLeaves.forEach(leave => {
-      const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || '').toLowerCase();
-      const hours = parseLeaveHours(leave, dailyLimit);
-
-      let label = "Távollét (szabadság, betegség)";
-      if (rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
-          rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr')) {
-        label = "Csúsztatás / Extra órák";
-      }
-
-      if (hours > 0) {
-        dailyTotal += hours;
-        htmlItems.push(`
-          <div class="d-flex justify-content-between align-items-center py-2 mb-1 border-bottom bg-success-subtle px-2 rounded border border-success-subtle">
+      let htmlItems = logs.map(i => {
+        const allIds = [i.id, ...i.extraIds].join(',');
+        return `
+          <div class="d-flex justify-content-between align-items-center py-2 mb-1 border-bottom">
             <div class="flex-grow-1 min-w-0 pe-2">
-              <div class="small fw-bold text-success-emphasis">
-                <i class="bi bi-calendar-check-fill me-1"></i> ${escapeHtml(label)}
+              <div class="small">
+                <strong class="text-primary">${escapeHtml(i.munkaszam)}</strong> 
+                <span class="text-muted mx-1">|</span> 
+                <small class="text-dark">${escapeHtml(i.vevo || "")}</small>
               </div>
-              <div class="text-muted small" style="font-size: 0.75rem;">
-                Jóváhagyva a SzabadságKezelőben (${escapeHtml(leave.tipus || 'Csúsztatás')})
+              <div class="text-muted small text-truncate" style="margin-top: -2px;">
+                ${escapeHtml(i.munka || "Nincs megnevezés")}
               </div>
             </div>
-            <div class="text-end" style="min-width: 90px;">
-              <strong class="fs-6 text-success me-2">+${hours.toFixed(2)} óra</strong>
+            <div class="text-end d-flex align-items-center justify-content-end" style="min-width: 90px;">
+              <strong class="fs-6 me-2">${Number(i.oraszam).toFixed(2)}</strong>
+              <button class="btn btn-sm btn-link text-info p-1 me-1" onclick="promptEditHour('${allIds}', '${i.munkaszam}', ${i.oraszam})" title="Szerkesztés">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-link text-danger p-1" onclick="deleteEntry('${allIds}', '${i.munkaszam}')" title="Törlés">
+                <i class="bi bi-trash"></i>
+              </button>
             </div>
           </div>
-        `);
-      }
-    });
+        `;
+      });
 
-    hoursDisplay.innerText = dailyTotal.toFixed(2);
-    if (htmlItems.length > 0) {
-      div.innerHTML = htmlItems.join('');
-      div.style.display = 'block';
-    } else {
+      activeLeaves.forEach(leave => {
+        const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || '').toLowerCase();
+        const hours = parseLeaveHours(leave, dailyLimit);
+
+        let label = "Távollét (szabadság, betegség)";
+        if (rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
+            rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr')) {
+          label = "Csúsztatás / Extra órák";
+        }
+
+        if (hours > 0) {
+          dailyTotal += hours;
+          htmlItems.push(`
+            <div class="d-flex justify-content-between align-items-center py-2 mb-1 border-bottom bg-success-subtle px-2 rounded border border-success-subtle">
+              <div class="flex-grow-1 min-w-0 pe-2">
+                <div class="small fw-bold text-success-emphasis">
+                  <i class="bi bi-calendar-check-fill me-1"></i> ${escapeHtml(label)}
+                </div>
+                <div class="text-muted small" style="font-size: 0.75rem;">
+                  Jóváhagyva a SzabadságKezelőben (${escapeHtml(leave.tipus || 'Csúsztatás')})
+                </div>
+              </div>
+              <div class="text-end" style="min-width: 90px;">
+                <strong class="fs-6 text-success me-2">+${hours.toFixed(2)} óra</strong>
+              </div>
+            </div>
+          `);
+        }
+      });
+
+      hoursDisplay.innerText = dailyTotal.toFixed(2);
+      if (htmlItems.length > 0) {
+        div.innerHTML = htmlItems.join('');
+        div.style.display = 'block';
+      } else {
+        div.style.display = 'none';
+      }
+    } catch (e) {
+      console.error("Hiba az órák frissítésekor:", e);
+      hoursDisplay.innerText = "0.00";
       div.style.display = 'none';
     }
-  } catch (e) {
-    console.error("Hiba az órák frissítésekor:", e);
-    hoursDisplay.innerText = "0.00";
-    div.style.display = 'none';
   }
-}
 
   function deleteEntry(rawIds, jobNum) {
     if (document.getElementById('deleteModalJobIdDisplay')) document.getElementById('deleteModalJobIdDisplay').innerText = jobNum;
@@ -1493,7 +1643,6 @@ function parseLeaveHours(leave, dailyLimit) {
       return s;
     };
 
-    // Segédfüggvény: Órák pontos kiszámítása a kérelmekből (intervallum támogatással)
     const getLeaveHours = (leave, limit) => {
       const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || leave.request_type || '').toLowerCase().trim();
       const isHourly = rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
@@ -1531,7 +1680,6 @@ function parseLeaveHours(leave, dailyLimit) {
       const { data: allProfilesRaw, error: profErr } = await supabaseClient.from('profiles').select('*');
       if (profErr) throw profErr;
 
-      // CSAK AZ AKTÍV MUNKATÁRSAK MEGTARTÁSA
       const allProfiles = allProfilesRaw.filter(p => {
         const st = String(p.statusz || 'aktív').toLowerCase().trim();
         return st === 'aktív' || st === 'aktiv';
@@ -1599,7 +1747,7 @@ function parseLeaveHours(leave, dailyLimit) {
       });
 
       let res = profiles.map(p => {
-        const email = cleanEmail(p.email), name = (p.nev || '').toLowerCase().trim();
+        const email = cleanEmail(p.email);
         const pLogs = logsByEmailMap[email] || [], pLeaves = leavesByEmailMap[email] || [];
         const dailyLimit = Number(p.napi_limit) || 8;
         let totalHours = 0, overtimeTotal = 0, downtimeTotal = 0;
@@ -1696,7 +1844,7 @@ function parseLeaveHours(leave, dailyLimit) {
     } catch (e) {
       if (list) list.innerHTML = `<div class="alert alert-danger py-2">Hiba az adatok feldolgozásakor: ${e.message}</div>`;
     }
-}
+  }
 
   let lastMissingReportForEmail = {};
 
@@ -1760,7 +1908,6 @@ function parseLeaveHours(leave, dailyLimit) {
       const startDateStr = `${monthVal}-01`;
       const endDateStr = `${endY}-${endM}-${endD}`;
       
-      // 1. WORK_LOGS LEKÉRÉSE CIKLUSSAL (1000 soros limit feloldása)
       let allLogs = [], logFrom = 0, step = 1000;
       while (true) {
         const { data: chunk, error: logErr } = await supabaseClient
@@ -1776,7 +1923,6 @@ function parseLeaveHours(leave, dailyLimit) {
         logFrom += step;
       }
 
-      // 2. LEAVE_REQUESTS LEKÉRÉSE CIKLUSSAL (1000 soros limit feloldása)
       let allLeaves = [], leaveFrom = 0;
       while (true) {
         const { data: chunk, error: leaveErr } = await supabaseClient
@@ -1790,13 +1936,12 @@ function parseLeaveHours(leave, dailyLimit) {
         leaveFrom += step;
       }
 
-      // Jóváhagyott kérelmek szűrése + HO teljes kizárása
       const approvedLeaves = allLeaves.filter(req => {
         const st = String(req.status || req.statusz || req.allapot || '').toLowerCase().trim();
         const isApproved = ['approved', 'elfogadva', 'jóváhagyva', 'jóváhagyott'].some(a => st.includes(a));
         const rawType = String(req.tipus || req.jelleg || req.tavollet_tipusa || req.request_type || '').toLowerCase().trim();
         const isHO = rawType.includes('home') || rawType.includes('office') || rawType === 'ho' || rawType.includes('otthoni');
-        return isApproved && !isHO; // HO-t nem tekintjük lefedett távollétnek!
+        return isApproved && !isHO;
       });
 
       const logsByEmailMap = {};
@@ -1853,7 +1998,6 @@ function parseLeaveHours(leave, dailyLimit) {
             const dayLogs = pLogs.filter(l => toStandardYYYYMMDD(l.datum) === dateStr);
             let dayTotal = dayLogs.reduce((sum, l) => sum + (Number(l.oraszam) || 0), 0);
 
-            // Távollétek/Csúsztatások beszámítása
             const dayLeaves = pLeaves.filter(req => {
               const start = toStandardYYYYMMDD(req.kezdo_datum || req.datum || req.start_date);
               const end = toStandardYYYYMMDD(req.veg_datum || req.kezdo_datum || req.datum || req.end_date);
@@ -1862,7 +2006,6 @@ function parseLeaveHours(leave, dailyLimit) {
 
             dayLeaves.forEach(leave => {
               const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || leave.request_type || '').toLowerCase().trim();
-              // CS, Ü, TR -> óralapos elszámolás, a többi (SZ, B, A, K, FN, T) -> teljes napi keret (limit)
               if (rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
                   rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr')) {
                 dayTotal += (Number(leave.oraszam) || 0);
@@ -1923,7 +2066,7 @@ function parseLeaveHours(leave, dailyLimit) {
     } finally {
       if (btn) btn.disabled = false; 
     }
-}
+  }
 
   function sendReminder(workerName, workerEmail) {
     const missingData = lastMissingReportForEmail[workerEmail];
@@ -2347,132 +2490,130 @@ function parseLeaveHours(leave, dailyLimit) {
   }
 
   async function checkMyMissing() {
-  const btn = (typeof event !== 'undefined' && event) ? event.currentTarget : document.querySelector('button[onclick="checkMyMissing()"]');
-  const div = document.getElementById('myMissingResult');
-  const dateVal = document.getElementById('datePicker') ? document.getElementById('datePicker').value : "";
+    const btn = (typeof event !== 'undefined' && event) ? event.currentTarget : document.querySelector('button[onclick="checkMyMissing()"]');
+    const div = document.getElementById('myMissingResult');
+    const dateVal = document.getElementById('datePicker') ? document.getElementById('datePicker').value : "";
 
-  if (!div || !dateVal) return;
-  const monthVal = dateVal.substring(0, 7);
+    if (!div || !dateVal) return;
+    const monthVal = dateVal.substring(0, 7);
 
-  if (btn) btn.disabled = true;
-  div.style.display = 'block';
-  div.className = "alert alert-light mt-2 p-2 small";
-  div.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div> Hiányzók keresése (${monthVal})...</div>`;
+    if (btn) btn.disabled = true;
+    div.style.display = 'block';
+    div.className = "alert alert-light mt-2 p-2 small";
+    div.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div> Hiányzók keresése (${monthVal})...</div>`;
 
-  try {
-    const today = new Date();
-    today.setHours(12, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
 
-    const [yr, mo] = monthVal.split('-');
-    let lastDayToCheck = new Date(parseInt(yr, 10), parseInt(mo, 10), 0, 12, 0, 0);
+      const [yr, mo] = monthVal.split('-');
+      let lastDayToCheck = new Date(parseInt(yr, 10), parseInt(mo, 10), 0, 12, 0, 0);
 
-    let isCurrentMonth = false;
-    if (lastDayToCheck >= today) {
-      lastDayToCheck = new Date(today);
-      lastDayToCheck.setDate(lastDayToCheck.getDate() - 1);
-      isCurrentMonth = true;
-    }
-
-    if (lastDayToCheck < new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1, 12, 0, 0)) {
-      div.className = "alert alert-success mt-2 p-2 small";
-      div.innerHTML = '<i class="bi bi-info-circle me-2"></i>Erre a hónapra még nincsenek ellenőrizhető napok.';
-      return;
-    }
-
-    const email = (currentUserProfile.email || '').toLowerCase().trim();
-    const startDateStr = `${monthVal}-01`;
-    const endDateStr = `${monthVal}-${String(lastDayToCheck.getDate()).padStart(2, '0')}`;
-
-    const [logRes, reqRes, leaveRes] = await Promise.all([
-      supabaseClient.from('work_logs').select('datum, oraszam').gte('datum', startDateStr).lte('datum', endDateStr).ilike('user_email', email),
-      supabaseClient.from('requests').select('datum, status').ilike('user_email', email),
-      supabaseClient.from('leave_requests').select('*').ilike('user_email', email)
-    ]);
-
-    if (logRes.error) throw logRes.error;
-
-    const logs = logRes.data || [];
-    const requestMap = {};
-    (reqRes.data || []).forEach(r => { requestMap[r.datum] = r.status; });
-
-    // HO KISZŰRÉSE: ne számítson jóváhagyott órának a HO
-    const approvedLeaves = (leaveRes.data || []).filter(req => {
-      const st = String(req.status || req.statusz || '').toLowerCase().trim();
-      const isApproved = ['approved', 'elfogadva', 'jóváhagyva', 'jóváhagyott'].some(a => st.includes(a));
-      const rawType = String(req.tipus || req.jelleg || req.tavollet_tipusa || '').toLowerCase().trim();
-      const isHO = rawType.includes('home') || rawType.includes('office') || rawType === 'ho' || rawType.includes('otthoni');
-      return isApproved && !isHO;
-    });
-
-    const limit = Number(currentUserProfile.napi_limit) || 8;
-    const alertThreshold = Math.max(0, limit - 2);
-    const cleanHolidays = (typeof holidayDates !== 'undefined' ? holidayDates : []).map(h => typeof normalizeDateStr === 'function' ? normalizeDateStr(h) : h);
-
-    let missingDays = [];
-    let currentD = new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1, 12, 0, 0);
-
-    while (currentD <= lastDayToCheck) {
-      const dY = currentD.getFullYear();
-      const dM = String(currentD.getMonth() + 1).padStart(2, '0');
-      const dD = String(currentD.getDate()).padStart(2, '0');
-      const dateStr = `${dY}-${dM}-${dD}`;
-
-      const belepStr = currentUserProfile.belepett ? normalizeDateStr(currentUserProfile.belepett) : '';
-      const kilepStr = currentUserProfile.kilepett ? normalizeDateStr(currentUserProfile.kilepett) : '';
-
-      if ((belepStr && dateStr < belepStr) || (kilepStr && dateStr > kilepStr)) {
-        currentD.setDate(currentD.getDate() + 1);
-        continue;
+      let isCurrentMonth = false;
+      if (lastDayToCheck >= today) {
+        lastDayToCheck = new Date(today);
+        lastDayToCheck.setDate(lastDayToCheck.getDate() - 1);
+        isCurrentMonth = true;
       }
 
-      const dayOfWeek = currentD.getDay();
-      if (dayOfWeek !== 0 && !cleanHolidays.includes(dateStr)) {
-        const dayLogs = logs.filter(l => normalizeDateStr(l.datum) === dateStr);
-        let dayTotal = dayLogs.reduce((sum, l) => sum + (Number(l.oraszam) || 0), 0);
-
-        const dayLeaves = approvedLeaves.filter(req => {
-          const start = req.kezdo_datum || req.datum || req.start_date;
-          const end = req.veg_datum || req.kezdo_datum || req.datum || req.end_date;
-          return dateStr >= (start.substring(0,10)) && dateStr <= (end.substring(0,10));
-        });
-
-        dayLeaves.forEach(leave => {
-          const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || '').toLowerCase();
-          if (rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
-              rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr')) {
-            dayTotal += (Number(leave.oraszam) || 0);
-          } else {
-            dayTotal += limit;
-          }
-        });
-
-        if (dayTotal < alertThreshold) {
-          missingDays.push({ date: dateStr, hours: dayTotal, required: limit });
-        }
+      if (lastDayToCheck < new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1, 12, 0, 0)) {
+        div.className = "alert alert-success mt-2 p-2 small";
+        div.innerHTML = '<i class="bi bi-info-circle me-2"></i>Erre a hónapra még nincsenek ellenőrizhető napok.';
+        return;
       }
-      currentD.setDate(currentD.getDate() + 1);
-    }
 
-    if (missingDays.length === 0) {
-      div.className = "alert alert-success mt-2 p-2 small";
-      div.innerHTML = `<i class="bi bi-check-circle me-2"></i>A(z) <strong>${monthVal}</strong> hónapban minden napod rendben van! 🎉`;
-    } else {
-      div.className = "alert alert-warning mt-2 p-2 small";
-      let listRows = missingDays.map(m => {
-        // gombok / állapot kiírása...
-        return `<div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-            <div><span><i class="bi bi-calendar-x me-2"></i><strong>${m.date}</strong></span> <span class="text-muted ms-2">(${(parseFloat(m.hours) || 0).toFixed(1)} / ${m.required} óra)</span></div>
-          </div>`;
+      const email = (currentUserProfile.email || '').toLowerCase().trim();
+      const startDateStr = `${monthVal}-01`;
+      const endDateStr = `${monthVal}-${String(lastDayToCheck.getDate()).padStart(2, '0')}`;
+
+      const [logRes, reqRes, leaveRes] = await Promise.all([
+        supabaseClient.from('work_logs').select('datum, oraszam').gte('datum', startDateStr).lte('datum', endDateStr).ilike('user_email', email),
+        supabaseClient.from('requests').select('datum, status').ilike('user_email', email),
+        supabaseClient.from('leave_requests').select('*').ilike('user_email', email)
+      ]);
+
+      if (logRes.error) throw logRes.error;
+
+      const logs = logRes.data || [];
+      const requestMap = {};
+      (reqRes.data || []).forEach(r => { requestMap[r.datum] = r.status; });
+
+      const approvedLeaves = (leaveRes.data || []).filter(req => {
+        const st = String(req.status || req.statusz || '').toLowerCase().trim();
+        const isApproved = ['approved', 'elfogadva', 'jóváhagyva', 'jóváhagyott'].some(a => st.includes(a));
+        const rawType = String(req.tipus || req.jelleg || req.tavollet_tipusa || '').toLowerCase().trim();
+        const isHO = rawType.includes('home') || rawType.includes('office') || rawType === 'ho' || rawType.includes('otthoni');
+        return isApproved && !isHO;
       });
-      div.innerHTML = `<strong>Hiányos napok (${monthVal}):</strong><div class="mt-1">${listRows.join('')}</div>`;
+
+      const limit = Number(currentUserProfile.napi_limit) || 8;
+      const alertThreshold = Math.max(0, limit - 2);
+      const cleanHolidays = (typeof holidayDates !== 'undefined' ? holidayDates : []).map(h => typeof normalizeDateStr === 'function' ? normalizeDateStr(h) : h);
+
+      let missingDays = [];
+      let currentD = new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1, 12, 0, 0);
+
+      while (currentD <= lastDayToCheck) {
+        const dY = currentD.getFullYear();
+        const dM = String(currentD.getMonth() + 1).padStart(2, '0');
+        const dD = String(currentD.getDate()).padStart(2, '0');
+        const dateStr = `${dY}-${dM}-${dD}`;
+
+        const belepStr = currentUserProfile.belepett ? normalizeDateStr(currentUserProfile.belepett) : '';
+        const kilepStr = currentUserProfile.kilepett ? normalizeDateStr(currentUserProfile.kilepett) : '';
+
+        if ((belepStr && dateStr < belepStr) || (kilepStr && dateStr > kilepStr)) {
+          currentD.setDate(currentD.getDate() + 1);
+          continue;
+        }
+
+        const dayOfWeek = currentD.getDay();
+        if (dayOfWeek !== 0 && !cleanHolidays.includes(dateStr)) {
+          const dayLogs = logs.filter(l => normalizeDateStr(l.datum) === dateStr);
+          let dayTotal = dayLogs.reduce((sum, l) => sum + (Number(l.oraszam) || 0), 0);
+
+          const dayLeaves = approvedLeaves.filter(req => {
+            const start = req.kezdo_datum || req.datum || req.start_date;
+            const end = req.veg_datum || req.kezdo_datum || req.datum || req.end_date;
+            return dateStr >= (start.substring(0,10)) && dateStr <= (end.substring(0,10));
+          });
+
+          dayLeaves.forEach(leave => {
+            const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || '').toLowerCase();
+            if (rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
+                rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr')) {
+              dayTotal += (Number(leave.oraszam) || 0);
+            } else {
+              dayTotal += limit;
+            }
+          });
+
+          if (dayTotal < alertThreshold) {
+            missingDays.push({ date: dateStr, hours: dayTotal, required: limit });
+          }
+        }
+        currentD.setDate(currentD.getDate() + 1);
+      }
+
+      if (missingDays.length === 0) {
+        div.className = "alert alert-success mt-2 p-2 small";
+        div.innerHTML = `<i class="bi bi-check-circle me-2"></i>A(z) <strong>${monthVal}</strong> hónapban minden napod rendben van! 🎉`;
+      } else {
+        div.className = "alert alert-warning mt-2 p-2 small";
+        let listRows = missingDays.map(m => {
+          return `<div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+              <div><span><i class="bi bi-calendar-x me-2"></i><strong>${m.date}</strong></span> <span class="text-muted ms-2">(${(parseFloat(m.hours) || 0).toFixed(1)} / ${m.required} óra)</span></div>
+            </div>`;
+        });
+        div.innerHTML = `<strong>Hiányos napok (${monthVal}):</strong><div class="mt-1">${listRows.join('')}</div>`;
+      }
+    } catch (e) {
+      div.className = "alert alert-danger mt-2 p-2 small";
+      div.innerHTML = "Szerver hiba történt: " + e.message;
+    } finally {
+      if (btn) btn.disabled = false;
     }
-  } catch (e) {
-    div.className = "alert alert-danger mt-2 p-2 small";
-    div.innerHTML = "Szerver hiba történt: " + e.message;
-  } finally {
-    if (btn) btn.disabled = false;
   }
-}
 
   function selectMissingDate(dateStr) {
     const datePicker = document.getElementById('datePicker');
@@ -2897,6 +3038,7 @@ function parseLeaveHours(leave, dailyLimit) {
     const canSeeApp = ['manager', 'leader', 'csoportvezeto', 'admin', 'boss'].includes(cleanRole);
     const canSeeAdmin = (cleanRole === 'admin');
 
+    // Asztali menü elemek szűrése
     const tabElements = document.querySelectorAll('.navbar-nav .nav-item');
 
     tabElements.forEach(el => {
@@ -2913,6 +3055,16 @@ function parseLeaveHours(leave, dailyLimit) {
         el.style.setProperty('display', canSeeAdmin ? '' : 'none', 'important');
       }
     });
+
+    // Mobil alsó menü elemek szűrése
+    const mbTeam = document.getElementById('mbTabTeam');
+    if (mbTeam) mbTeam.style.setProperty('display', canSeeTeam ? '' : 'none', 'important');
+
+    const mbApp = document.getElementById('mbTabApp');
+    if (mbApp) mbApp.style.setProperty('display', canSeeApp ? '' : 'none', 'important');
+
+    const mbAdm = document.getElementById('mbTabAdm');
+    if (mbAdm) mbAdm.style.setProperty('display', canSeeAdmin ? '' : 'none', 'important');
 
     if (!canSeeAdmin && !canSeeTeam && !canSeeApp) {
       if (typeof switchTab === 'function') switchTab('rec-tab');
