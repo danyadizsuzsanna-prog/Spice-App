@@ -1349,17 +1349,26 @@
           </div>
 
           <hr class="my-3">
-          <h6 class="fw-bold text-primary mb-2">🌴 Szabadság Keretek</h6>
+          <h6 class="fw-bold text-primary mb-2">🌴 Szabadság és Munkaidő Keretek</h6>
           <div class="row g-2 mb-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">Napi Keret (óra) <span class="text-danger">*</span></label>
+              <select class="form-select form-select-sm fw-bold border-primary" id="editUserNapiLimit" required>
+                <option value="8">8 óra (100%)</option>
+                <option value="6">6 óra (75%)</option>
+                <option value="4">4 óra (50%)</option>
+                <option value="2">2 óra (25%)</option>
+              </select>
+            </div>
+            <div class="col-md-3">
               <label class="form-label small fw-bold">Idei Éves Keret (nap)</label>
               <input type="number" class="form-control form-control-sm" id="editUserEvesKeret" required>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label small fw-bold">Tavalyi Maradék Keret (nap)</label>
               <input type="number" class="form-control form-control-sm" id="editUserTavalyiKeret" required>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label small fw-bold">Havi HO Keret (nap)</label>
               <input type="number" class="form-control form-control-sm" id="editUserHoKeret" required>
             </div>
@@ -1555,7 +1564,7 @@
 <nav class="app-bottom-nav">
   <div class="app-nav-item active" id="mbTabDashboard" onclick="switchMobileTab('dashboard', this)">
     <i class="bi bi-house-door"></i>
-    <span>Pult</span>
+    <span>SajátPult</span>
   </div>
   <div class="app-nav-item" id="mbTabCalendar" onclick="switchMobileTab('calendar', this)">
     <i class="bi bi-calendar3"></i>
@@ -2477,37 +2486,47 @@
   }
 
   function openEditUserModal(email) {
-    const user = adminUsersCache.find(u => normalizeStr(u.email) === normalizeStr(email));
-    if (!user) {
-      showToast("A munkatárs adatai nem találhatók!", "danger");
-      return;
-    }
+  const user = adminUsersCache.find(u => normalizeStr(u.email) === normalizeStr(email));
+  if (!user) {
+    if (typeof showToast === 'function') showToast("A munkatárs adatai nem találhatók!", "danger");
+    return;
+  }
 
-    document.getElementById('editUserId').value = user.id;
-    document.getElementById('editOriginalEmail').value = user.email;
-    document.getElementById('editUserName').value = user.nev || '';
-    document.getElementById('editUserEmail').value = user.email || '';
-    document.getElementById('editUserRole').value = (user.jogosultsag || user.role || 'user').toLowerCase().trim();
-    document.getElementById('editUserGroup').value = user.csoport || '';
-    document.getElementById('editUserPozicio').value = user.pozicio || '';
-    
-    document.getElementById('editUserEvesKeret').value = user.eves_keret || 20;
-    document.getElementById('editUserTavalyiKeret').value = user.tavalyi_keret || 0;
-    document.getElementById('editUserHoKeret').value = user.ho_keret || 4;
+  // Biztonságos értékbeállító segédfüggvény (nem dob hibát, ha hiányzik a HTML elem)
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
 
-    document.getElementById('editUserStatus').value = (user.statusz || 'aktív').toLowerCase().trim();
-    document.getElementById('editUserBelepett').value = user.belepett || '';
-    document.getElementById('editUserKilepett').value = user.kilepett || '';
+  setVal('editUserId', user.id);
+  setVal('editOriginalEmail', user.email);
+  setVal('editUserName', user.nev || '');
+  setVal('editUserEmail', user.email || '');
+  setVal('editUserRole', (user.jogosultsag || user.role || 'user').toLowerCase().trim());
+  setVal('editUserGroup', user.csoport || '');
+  setVal('editUserPozicio', user.pozicio || '');
+  
+  // Munkaidő keret / Napi limit beállítása
+  setVal('editUserNapiLimit', user.munkaido_keret || user.napi_limit || 8);
+  setVal('editUserEvesKeret', user.eves_keret || 20);
+  setVal('editUserTavalyiKeret', user.tavalyi_keret || 0);
+  setVal('editUserHoKeret', user.ho_keret || 4);
 
-    document.getElementById('editUserCsvEmail').value = user.csoportvezeto_email || '';
-    document.getElementById('editUserLeaderEmail').value = user.leader_email || '';
-    document.getElementById('editUserManagerEmail').value = user.manager_email || '';
-    document.getElementById('editUserBossEmail').value = user.boss_email || '';
+  setVal('editUserStatus', (user.statusz || 'aktív').toLowerCase().trim());
+  setVal('editUserBelepett', user.belepett || '');
+  setVal('editUserKilepett', user.kilepett || '');
 
-    const modalEl = document.getElementById('editUserModal');
+  setVal('editUserCsvEmail', user.csoportvezeto_email || '');
+  setVal('editUserLeaderEmail', user.leader_email || '');
+  setVal('editUserManagerEmail', user.manager_email || '');
+  setVal('editUserBossEmail', user.boss_email || '');
+
+  const modalEl = document.getElementById('editUserModal');
+  if (modalEl) {
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
   }
+}
 
   async function saveEditUser(event) {
     event.preventDefault();
@@ -2519,17 +2538,19 @@
     const belepettVal = document.getElementById('editUserBelepett').value;
     const kilepettVal = document.getElementById('editUserKilepett').value;
 
+    // saveEditUser-ben az updatedData objektum:
     const updatedData = {
       nev: document.getElementById('editUserName').value.trim(),
       jogosultsag: document.getElementById('editUserRole').value,
       csoport: document.getElementById('editUserGroup').value.trim(),
       pozicio: document.getElementById('editUserPozicio').value.trim(),
+      munkaido_keret: Number(document.getElementById('editUserNapiLimit').value) || 8, // Supabase munkaido_keret oszlop!
       eves_keret: Number(document.getElementById('editUserEvesKeret').value) || 0,
       tavalyi_keret: Number(document.getElementById('editUserTavalyiKeret').value) || 0,
       ho_keret: Number(document.getElementById('editUserHoKeret').value) || 0,
       statusz: document.getElementById('editUserStatus').value,
-      belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
-      kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
+      belepett: (belepettVal && belepVal.trim() !== '') ? belepettVal : null,
+      kilepett: (kilepVal && kilepVal.trim() !== '') ? kilepVal : null,
       csoportvezeto_email: document.getElementById('editUserCsvEmail').value.trim().toLowerCase(),
       leader_email: document.getElementById('editUserLeaderEmail').value.trim().toLowerCase(),
       manager_email: document.getElementById('editUserManagerEmail').value.trim().toLowerCase(),
@@ -2595,22 +2616,23 @@
     const belepettVal = document.getElementById('addUserBelepett').value;
     const kilepettVal = document.getElementById('addUserKilepett').value;
 
-    const newUserData = {
-      nev: document.getElementById('addUserName').value.trim(),
-      email: document.getElementById('addUserEmail').value.trim().toLowerCase(),
-      jogosultsag: document.getElementById('addUserRole').value,
-      csoport: document.getElementById('addUserGroup').value.trim(),
-      pozicio: document.getElementById('addUserPozicio').value.trim(),
-      eves_keret: Number(document.getElementById('addUserEvesKeret').value) || 20,
-      tavalyi_keret: Number(document.getElementById('addUserTavalyiKeret').value) || 0,
-      ho_keret: Number(document.getElementById('addUserHoKeret').value) || 4,
-      statusz: document.getElementById('addUserStatus').value,
-      belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
-      kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
-      csoportvezeto_email: document.getElementById('addUserCsvEmail').value.trim().toLowerCase(),
-      leader_email: document.getElementById('addUserLeaderEmail').value.trim().toLowerCase(),
-      manager_email: document.getElementById('addUserManagerEmail').value.trim().toLowerCase(),
-      boss_email: document.getElementById('addUserBossEmail').value.trim().toLowerCase()
+    // saveEditUser-ben az updatedData objektum:
+    const updatedData = {
+      nev: document.getElementById('editUserName').value.trim(),
+      jogosultsag: document.getElementById('editUserRole').value,
+      csoport: document.getElementById('editUserGroup').value.trim(),
+      pozicio: document.getElementById('editUserPozicio').value.trim(),
+      munkaido_keret: Number(document.getElementById('editUserNapiLimit').value) || 8, // Supabase munkaido_keret oszlop!
+      eves_keret: Number(document.getElementById('editUserEvesKeret').value) || 0,
+      tavalyi_keret: Number(document.getElementById('editUserTavalyiKeret').value) || 0,
+      ho_keret: Number(document.getElementById('editUserHoKeret').value) || 0,
+      statusz: document.getElementById('editUserStatus').value,
+      belepett: (belepettVal && belepVal.trim() !== '') ? belepettVal : null,
+      kilepett: (kilepVal && kilepVal.trim() !== '') ? kilepVal : null,
+      csoportvezeto_email: document.getElementById('editUserCsvEmail').value.trim().toLowerCase(),
+      leader_email: document.getElementById('editUserLeaderEmail').value.trim().toLowerCase(),
+      manager_email: document.getElementById('editUserManagerEmail').value.trim().toLowerCase(),
+      boss_email: document.getElementById('editUserBossEmail').value.trim().toLowerCase()
     };
 
     try {
