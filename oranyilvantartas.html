@@ -95,6 +95,11 @@
     .is-narrow-view { max-width: 650px !important; }
     .is-wide-view { max-width: 98% !important; }
 
+    /* Flexbox truncate fix */
+    .min-w-0 {
+      min-width: 0 !important;
+    }
+
     .card {
       border: 1px solid rgba(226, 232, 240, 0.9) !important;
       border-radius: 18px !important;
@@ -159,19 +164,8 @@
     #dayDetailList { 
       border: 1.5px solid #e2e8f0; 
       border-radius: 12px; 
-      padding: 12px; 
+      padding: 10px 12px; 
       background: #ffffff; 
-      overflow: hidden;
-    }
-
-    #dayDetailList .text-end {
-      white-space: nowrap !important;
-      flex-shrink: 0 !important;
-    }
-
-    #dayDetailList strong {
-      font-size: 0.88rem !important;
-      white-space: nowrap !important;
     }
 
     td, th, span, small, p, div, strong {
@@ -1222,21 +1216,21 @@
         return `
           <div class="d-flex justify-content-between align-items-center py-2 mb-1 border-bottom">
             <div class="flex-grow-1 min-w-0 pe-2">
-              <div class="small">
+              <div class="small text-truncate">
                 <strong class="text-primary">${escapeHtml(i.munkaszam)}</strong> 
                 <span class="text-muted mx-1">|</span> 
-                <small class="text-dark">${escapeHtml(i.vevo || "")}</small>
+                <span class="text-dark">${escapeHtml(i.vevo || "")}</span>
               </div>
-              <div class="text-muted small text-truncate" style="margin-top: -2px;">
+              <div class="text-muted small text-truncate" style="margin-top: -2px; font-size: 0.8rem;">
                 ${escapeHtml(i.munka || "Nincs megnevezés")}
               </div>
             </div>
-            <div class="d-flex align-items-center justify-content-end flex-shrink-0 ms-2 gap-1">
-              <strong style="font-size: 0.88rem; white-space: nowrap;" class="me-1">${Number(i.oraszam).toFixed(2)}</strong>
-              <button class="btn btn-sm btn-link text-info p-0 me-1" onclick="promptEditHour('${allIds}', '${i.munkaszam}', ${i.oraszam})" title="Szerkesztés">
+            <div class="d-flex align-items-center justify-content-end flex-shrink-0 ms-1 gap-2" style="white-space: nowrap;">
+              <strong style="font-size: 0.9rem;" class="me-1">${Number(i.oraszam).toFixed(2)}</strong>
+              <button class="btn btn-sm btn-link text-info p-1 m-0 text-decoration-none" onclick="promptEditHour('${allIds}', '${i.munkaszam}', ${i.oraszam})" title="Szerkesztés">
                 <i class="bi bi-pencil fs-6"></i>
               </button>
-              <button class="btn btn-sm btn-link text-danger p-0" onclick="deleteEntry('${allIds}', '${i.munkaszam}')" title="Törlés">
+              <button class="btn btn-sm btn-link text-danger p-1 m-0 text-decoration-none" onclick="deleteEntry('${allIds}', '${i.munkaszam}')" title="Törlés">
                 <i class="bi bi-trash fs-6"></i>
               </button>
             </div>
@@ -1259,10 +1253,10 @@
           htmlItems.push(`
             <div class="d-flex justify-content-between align-items-center py-2 mb-1 border-bottom bg-success-subtle px-2 rounded border border-success-subtle">
               <div class="flex-grow-1 min-w-0 pe-2">
-                <div class="small fw-bold text-success-emphasis">
+                <div class="small fw-bold text-success-emphasis text-truncate">
                   <i class="bi bi-calendar-check-fill me-1"></i> ${escapeHtml(label)}
                 </div>
-                <div class="text-muted small" style="font-size: 0.75rem;">
+                <div class="text-muted small text-truncate" style="font-size: 0.75rem;">
                   Jóváhagyva a SzabadságKezelőben (${escapeHtml(leave.tipus || 'Csúsztatás')})
                 </div>
               </div>
@@ -3087,7 +3081,7 @@
           const bodyText = `Szia Admin!\n\n${req.nev} pótlási kérelmét a felettese (${approverName}) jóváhagyta (${req.datum}).\nFelettes megjegyzése: "${finalComment}"\nKérlek nyisd meg a napot az Admin felületen!`;
           const htmlBodyText = `<div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
             <h3 style="color: #363636; margin-top: 0; font-size: 16px;">Jóváhagyásra váró kérelem</h3>
-            <p style="font-size: 14px; color: #4a4a4a;"><strong>${escapeHtml(req.nev)}</strong> pótlási kérelmet a felettese (<strong>${escapeHtml(approverName)}</strong>) jóváhagyta a(z) <strong>${req.datum}</strong> napra.</p>
+            <p style="font-size: 14px; color: #4a4a4a;"><strong>${escapeHtml(req.nev)}</strong> pótlási kérelmét a felettese (<strong>${escapeHtml(approverName)}</strong>) jóváhagyta a(z) <strong>${req.datum}</strong> napra.</p>
             <div style="background-color: #f0f8ff; padding: 12px; border-left: 4px solid #3273dc; margin: 10px 0; font-size: 13px;">
               <strong style="color: #3273dc;">Dolgozó indoklása:</strong><br><em>"${escapeHtml(req.indoklas || 'Nincs megadva')}"</em>
             </div>
