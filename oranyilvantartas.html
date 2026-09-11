@@ -453,9 +453,14 @@
     </div>
     
     <div class="mb-3">
-      <button class="btn btn-sm btn-outline-info w-100 fw-bold" onclick="checkMyMissing()">
-        <i class="bi bi-calendar-check me-1"></i> Hiányzó napjaim
-      </button>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-info flex-grow-1 fw-bold" id="checkMyMissingBtn" onclick="checkMyMissing()">
+          <i class="bi bi-calendar-check me-1"></i> Hiányzó napjaim
+        </button>
+        <button class="btn btn-sm btn-light fw-bold border px-3" id="hideMyMissingBtn" onclick="hideMyMissing()" style="display:none;">
+          <i class="bi bi-eye-slash me-1"></i> Elrejtés
+        </button>
+      </div>
       <div id="myMissingResult" class="mt-2" style="display:none;"></div>
     </div>
 
@@ -627,14 +632,24 @@
       <div id="lockedMonthsContainer" class="d-flex flex-wrap gap-2 mt-3"></div>
     </div>
 
-    <div class="card p-3 border-0 bg-light">
-      <p class="fw-bold small mb-2">Havi összesítő generálása (csak a lezárt hónapokat lehet)</p>
+    <!-- MEGLÉVŐ KÓD (Havi összesítő) -->
+    <div class="card p-3 border-0 bg-light mb-4">
+      <p class="fw-bold small mb-2">Havi munkaidő összesítő generálása (csak a lezárt hónapokat lehet)</p>
       <div class="input-group input-group-sm">
         <select class="form-select" id="exportMonthSelect"></select>
         <button class="btn btn-primary" onclick="runExport()" id="exportCsvBtn">Letöltés</button>
       </div>
     </div>
-  </div>
+
+    <!-- ÚJ KÓD: Nyitási kérelmek exportálása -->
+    <div class="card p-3 border-0 bg-light">
+      <p class="fw-bold small mb-2 text-warning-emphasis"><i class="bi bi-unlock-fill me-1"></i> Nyitási kérelmek / Döntések exportálása (Havi)</p>
+      <div class="input-group input-group-sm">
+        <input type="month" class="form-control" id="exportRequestsMonth">
+        <button class="btn btn-warning fw-bold text-dark" onclick="exportRequestsToCsv()" id="exportRequestsBtn">Kérelmek letöltése (CSV)</button>
+      </div>
+    </div>
+  
 
   <!-- 6. FÜL: CSAPAT STATISZTIKA -->
   <div id="team-stat-tab" class="tab-content-item card p-4 shadow-sm" style="display:none;">
@@ -1117,14 +1132,17 @@
 
     const monthVal = fullDate.substring(0, 7);
 
-    if (typeof lockedMonths !== 'undefined' && lockedMonths.includes(monthVal)) {
-      return showModal(`A(z) <strong>${monthVal}</strong> hónap az Adminisztráció által le van zárva!`, "Lezárt hónap");
-    }
-
+    // KIZÁRÓLAG AZ "isWithinAllowedLoggingWindow" FÜGGVÉNYRE BÍZZUK A DÖNTÉST!
     const isAllowed = await isWithinAllowedLoggingWindow(fullDate);
 
     if (!isAllowed) {
-      showModal(`A(z) ${fullDate} dátum kívül esik a rögzítési ablakon. Erre a napra pótlási kérelmet kell benyújtanod!`, "Pótlási kérelem szükséges");
+      // Személyre szabott hibaüzenet attól függően, hogy miért van zárva a nap
+      if (isMonthLocked(monthVal)) {
+         showModal(`A(z) <strong>${monthVal}</strong> hónapot az Adminisztráció már lezárta. Erre a napra pótlási/nyitási kérelmet kell benyújtanod!`, "Lezárt hónap");
+      } else {
+         showModal(`A(z) <strong>${fullDate}</strong> dátum lezárult (2 munkanapnál régebbi). Erre a napra pótlási/nyitási kérelmet kell benyújtanod!`, "Zárt nap");
+      }
+      
       if (typeof openRequestModal === "function") openRequestModal(fullDate, jobNumber, hoursVal);
       return;
     }
@@ -1135,7 +1153,7 @@
       const { error } = await supabaseClient
         .from('work_logs')
         .insert([{
-          user_email: currentUserProfile.email,
+          user_email: cleanEmail(currentUserProfile.email),
           nev: currentUserProfile.nev,
           pozicio: currentUserProfile.pozicio || "",
           datum: fullDate,
@@ -1165,42 +1183,50 @@
     if (!targetDateStr) return false;
     const monthVal = targetDateStr.substring(0, 7);
 
-    if (typeof lockedMonths !== 'undefined' && lockedMonths.includes(monthVal)) return false;
-
+    // 1. EGYÉNI NYITÁSI KÉRELEM ELLENŐRZÉSE A SUPABASE-BEN (Ez a legerősebb szabály!)
     if (currentUserProfile && currentUserProfile.email) {
       const { data: activeRequests } = await supabaseClient
         .from('requests')
         .select('expires_at')
-        .eq('user_email', currentUserProfile.email)
+        .eq('user_email', cleanEmail(currentUserProfile.email))
         .eq('datum', targetDateStr)
         .eq('status', 'approved')
         .gt('expires_at', new Date().toISOString());
 
+      // Ha van aktív, jóváhagyott kérelem, akkor engedélyezzük a napot (még ha a hónap zárt is!)
       if (activeRequests && activeRequests.length > 0) return true;
     }
 
+    // 2. ADMIN HAVI ZÁRÁS (Ha nincs egyéni feloldás, és a hónap zárt, akkor vége)
+    if (isMonthLocked(monthVal)) return false;
+
+    // 3. ALAPÉRTELMEZETT SZABÁLY: MA + VISSZAMENŐLEG 2 MUNKANAP
     const today = new Date();
     today.setHours(12, 0, 0, 0);
 
     const selected = new Date(targetDateStr);
     selected.setHours(12, 0, 0, 0);
 
-    if (selected > today) return false;
+    // Jövőbeli napokat nem lehet rögzíteni
+    if (selected > today) return false; 
 
-    const cleanHolidays = (holidayDates || []).map(h => normalizeDateStr(h));
+    const cleanHolidays = (typeof holidayDates !== 'undefined' ? holidayDates : []).map(h => typeof normalizeDateStr === 'function' ? normalizeDateStr(h) : h);
     let bizDaysCount = 0;
     let curr = new Date(today);
 
+    // Visszalépünk pontosan 2 érvényes munkanapot
     while (bizDaysCount < 2) {
       curr.setDate(curr.getDate() - 1);
       const currStr = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
       const dayOfWeek = curr.getDay();
 
+      // Ha nem hétvége (0=Vasárnap, 6=Szombat) és nem is ünnepnap, akkor az egy érvényes munkanap
       if (dayOfWeek !== 0 && dayOfWeek !== 6 && !cleanHolidays.includes(currStr)) {
         bizDaysCount++;
       }
     }
 
+    // Engedélyezett, ha a kiválasztott dátum egyenlő vagy újabb, mint a 2 munkanapos határ
     return selected >= curr;
   }
 
@@ -1264,6 +1290,83 @@
       const emailClean = cleanEmail(currentUserProfile?.email);
       const normalizedDv = typeof normalizeDateStr === 'function' ? normalizeDateStr(dv) : dv;
 
+      // 1. ELBÍRÁLÁS: LE VAN ZÁRVA EZ A NAP?
+      const isAllowed = await isWithinAllowedLoggingWindow(normalizedDv);
+
+      // 2. FIGYELMEZTETŐ SÁV ÉS ŰRLAP BLOKKOLÁS INJEKTÁLÁSA (#dailyStatus FÖLÉ)
+      let lockAlert = document.getElementById('lockAlertBanner');
+      if (!lockAlert) {
+         lockAlert = document.createElement('div');
+         lockAlert.id = 'lockAlertBanner';
+         const topTargetEl = document.getElementById('dailyStatus');
+         if (topTargetEl && topTargetEl.parentNode) {
+             topTargetEl.parentNode.insertBefore(lockAlert, topTargetEl);
+         }
+      }
+
+      if (!isAllowed) {
+         // Ellenőrizzük, hogy van-e már beküldött, elbírálásra váró kérelem erre a napra
+         let isPending = false;
+         try {
+           const { data: pendingReqs } = await supabaseClient
+             .from('requests')
+             .select('id, status')
+             .eq('user_email', emailClean)
+             .eq('datum', normalizedDv)
+             .or('status.eq.pending_level1,status.eq.pending_admin,status.eq.pending,status.eq.Függőben');
+           if (pendingReqs && pendingReqs.length > 0) isPending = true;
+         } catch(err) { console.error(err); }
+
+         if (isPending) {
+           lockAlert.innerHTML = `
+             <div class="alert alert-warning py-2 mb-3 small d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 border-start border-4 border-warning shadow-sm">
+               <span><i class="bi bi-clock-history me-1"></i> <strong>A nyitási kérelem erre a napra (${normalizedDv}) elbírálás alatt van.</strong></span>
+               <span class="badge bg-warning text-dark py-1.5 px-3 fs-6"><i class="bi bi-hourglass-split me-1"></i>Függőben</span>
+             </div>`;
+         } else {
+           lockAlert.innerHTML = `
+             <div class="alert alert-danger py-2 mb-3 small d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 border-start border-4 border-danger shadow-sm">
+               <span><i class="bi bi-lock-fill me-1"></i> <strong>Ez a nap lezárt (${normalizedDv}).</strong> Rögzítéshez nyitási kérelmet kell beküldened!</span>
+               <button class="btn btn-sm btn-warning fw-bold py-1 px-3 text-dark text-nowrap" onclick="openRequestModal('${normalizedDv}')">
+                 <i class="bi bi-unlock-fill me-1"></i> Nyitási kérelem
+               </button>
+             </div>`;
+         }
+         lockAlert.style.display = 'block';
+         
+         // Beszürkítjük és letiltjuk az alatta lévő rögzítő mezőket
+         if(document.getElementById('workForm')) {
+             document.getElementById('workForm').style.pointerEvents = 'none';
+             document.getElementById('workForm').style.opacity = '0.4';
+         }
+         if(document.getElementById('favoritesArea')) {
+             document.getElementById('favoritesArea').style.pointerEvents = 'none';
+             document.getElementById('favoritesArea').style.opacity = '0.4';
+         }
+         const searchHighlight = document.querySelector('.search-box-highlight');
+         if(searchHighlight) {
+             searchHighlight.style.pointerEvents = 'none';
+             searchHighlight.style.opacity = '0.4';
+         }
+      } else {
+         // Ha nyitva van a nap, elrejtjük a sávot és engedélyezzük az űrlapot
+         lockAlert.style.display = 'none';
+         if(document.getElementById('workForm')) {
+             document.getElementById('workForm').style.pointerEvents = 'auto';
+             document.getElementById('workForm').style.opacity = '1';
+         }
+         if(document.getElementById('favoritesArea')) {
+             document.getElementById('favoritesArea').style.pointerEvents = 'auto';
+             document.getElementById('favoritesArea').style.opacity = '1';
+         }
+         const searchHighlight = document.querySelector('.search-box-highlight');
+         if(searchHighlight) {
+             searchHighlight.style.pointerEvents = 'auto';
+             searchHighlight.style.opacity = '1';
+         }
+      }
+
+      // Adatok betöltése
       const [logsRes, leaveRes] = await Promise.all([
         supabaseClient.from('work_logs').select('*').ilike('user_email', emailClean).eq('datum', normalizedDv),
         supabaseClient.from('leave_requests').select('*').ilike('user_email', emailClean)
@@ -1271,7 +1374,8 @@
 
       if (logsRes.error) throw logsRes.error;
 
-      const dailyLimit = Number(currentUserProfile?.napi_limit) || 8;
+      // Napi keret olvasása a Supabase munkaido_keret oszlopából
+      const dailyLimit = Number(currentUserProfile?.munkaido_keret || currentUserProfile?.napi_limit) || 8;
 
       const activeLeaves = (leaveRes.data || []).filter(req => {
         const st = String(req.status || req.statusz || req.allapot || '').toLowerCase().trim();
@@ -1290,8 +1394,16 @@
         return normalizedDv >= start && normalizedDv <= end;
       });
 
+      // Távolléti tükörrekordok kiszűrése duplázódás ellen (work_logs táblából)
+      const isAbsenceLog = (l) => {
+        const txt = normalizeStr((l.munkaszam || '') + ' ' + (l.vevo || '') + ' ' + (l.munka || ''));
+        return txt.includes('tavollet') || txt.includes('szabadsag') || txt.includes('betegseg');
+      };
+
+      const filteredLogs = (logsRes.data || []).filter(l => !isAbsenceLog(l));
+
       const groupedMap = {};
-      (logsRes.data || []).forEach(item => {
+      filteredLogs.forEach(item => {
         const key = `${item.munkaszam}_${item.vevo || ''}_${item.munka || ''}`;
         if (!groupedMap[key]) {
           groupedMap[key] = { ...item, oraszam: 0, extraIds: [] };
@@ -1320,12 +1432,18 @@
             </div>
             <div class="d-flex align-items-center justify-content-end flex-shrink-0 ms-1 gap-2" style="white-space: nowrap;">
               <strong style="font-size: 0.9rem;" class="me-1">${Number(i.oraszam).toFixed(2)}</strong>
+              ${isAllowed ? `
               <button class="btn btn-sm btn-link text-info p-1 m-0 text-decoration-none" onclick="promptEditHour('${allIds}', '${i.munkaszam}', ${i.oraszam})" title="Szerkesztés">
                 <i class="bi bi-pencil fs-6"></i>
               </button>
               <button class="btn btn-sm btn-link text-danger p-1 m-0 text-decoration-none" onclick="deleteEntry('${allIds}', '${i.munkaszam}')" title="Törlés">
                 <i class="bi bi-trash fs-6"></i>
               </button>
+              ` : `
+              <button class="btn btn-sm btn-link text-secondary p-1 m-0 text-decoration-none" onclick="showModal('Ez a nap már lezárt. Módosításhoz nyitási kérelmet kell beküldened!', 'Zárt nap')" title="Lezárt nap">
+                <i class="bi bi-lock-fill fs-6"></i>
+              </button>
+              `}
             </div>
           </div>
         `;
@@ -1374,7 +1492,6 @@
       div.style.display = 'none';
     }
   }
-
   function deleteEntry(rawIds, jobNum) {
     if (document.getElementById('deleteModalJobIdDisplay')) document.getElementById('deleteModalJobIdDisplay').innerText = jobNum;
     if (document.getElementById('deleteModalRawIdsHidden')) document.getElementById('deleteModalRawIdsHidden').value = rawIds;
@@ -1388,6 +1505,18 @@
   }
 
   async function executeDelete() {
+    // 1. Zárt napok vizsgálata törlés előtt
+    const datePicker = document.getElementById('datePicker');
+    const targetDate = datePicker ? datePicker.value : "";
+
+    if (targetDate) {
+      const isAllowed = await isWithinAllowedLoggingWindow(targetDate);
+      if (!isAllowed) {
+        closeDeleteModal();
+        return showModal(`A(z) <strong>${targetDate}</strong> dátum le van zárva. Törléshez nyitási kérelmet kell beküldened!`, "Zárt nap");
+      }
+    }
+
     const rawIdsHidden = document.getElementById('deleteModalRawIdsHidden');
     const rawIds = rawIdsHidden ? rawIdsHidden.value : '';
     const ids = rawIds.split(',').filter(Boolean);
@@ -1395,7 +1524,11 @@
     closeDeleteModal();
     if (ids.length === 0) return;
 
-    setGlobalLoading(true, "Törlés...");
+    if (typeof safeSetGlobalLoading === 'function') {
+      safeSetGlobalLoading(true, "Törlés...");
+    } else if (typeof setGlobalLoading === 'function') {
+      setGlobalLoading(true, "Törlés...");
+    }
 
     try {
       const { error } = await supabaseClient.from('work_logs').delete().in('id', ids);
@@ -1405,7 +1538,11 @@
     } catch (e) {
       showModal("Hiba a törlés során: " + e.message, "Hiba");
     } finally {
-      setGlobalLoading(false);
+      if (typeof safeSetGlobalLoading === 'function') {
+        safeSetGlobalLoading(false);
+      } else if (typeof setGlobalLoading === 'function') {
+        setGlobalLoading(false);
+      }
     }
   }
 
@@ -1424,7 +1561,19 @@
     if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
   }
 
-  async function submitEditHour() {
+ async function submitEditHour() {
+    // 1. Zárt napok vizsgálata módosítás előtt
+    const datePicker = document.getElementById('datePicker');
+    const targetDate = datePicker ? datePicker.value : "";
+    
+    if (targetDate) {
+      const isAllowed = await isWithinAllowedLoggingWindow(targetDate);
+      if (!isAllowed) {
+        closeEditModal();
+        return showModal(`A(z) <strong>${targetDate}</strong> dátum le van zárva. Módosításhoz nyitási kérelmet kell beküldened!`, "Zárt nap");
+      }
+    }
+
     const logIdHidden = document.getElementById('editModalJobIdHidden');
     const hoursInput = document.getElementById('editModalNewHours');
 
@@ -1435,7 +1584,11 @@
     if (ids.length === 0) return showModal("Hiányzó rekord azonosító!", "Hiba");
     if (isNaN(newHours) || newHours <= 0) return showModal("Érvénytelen óraszám!", "Hiba");
 
-    setGlobalLoading(true, "Módosítás...");
+    if (typeof safeSetGlobalLoading === 'function') {
+      safeSetGlobalLoading(true, "Módosítás...");
+    } else if (typeof setGlobalLoading === 'function') {
+      setGlobalLoading(true, "Módosítás...");
+    }
 
     try {
       const mainId = ids[0];
@@ -1455,7 +1608,11 @@
     } catch (e) {
       showModal("Hiba a módosítás során: " + e.message, "Hiba");
     } finally {
-      setGlobalLoading(false);
+      if (typeof safeSetGlobalLoading === 'function') {
+        safeSetGlobalLoading(false);
+      } else if (typeof setGlobalLoading === 'function') {
+        setGlobalLoading(false);
+      }
     }
   }
 
@@ -2250,6 +2407,203 @@ async function checkMissingRecords(evt) {
     }
 }
 
+// SAJÁT HIÁNYZÓ NAPOK ELLENŐRZÉSE A RÖGZÍTÉS FÜLÖN
+  async function checkMyMissing() {
+    const btn = (typeof event !== 'undefined' && event) ? event.currentTarget : document.getElementById('checkMyMissingBtn');
+    const div = document.getElementById('myMissingResult');
+    const hideBtn = document.getElementById('hideMyMissingBtn');
+    const dateVal = document.getElementById('datePicker') ? document.getElementById('datePicker').value : "";
+
+    if (!div || !dateVal) return;
+    const monthVal = dateVal.substring(0, 7);
+
+    if (btn) btn.disabled = true;
+    div.style.display = 'block';
+    if (hideBtn) hideBtn.style.display = 'block'; // Megjelenítjük az Elrejtés gombot
+
+    div.className = "alert alert-light mt-2 p-2 small";
+    div.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div> Hiányzók keresése (${monthVal})...</div>`;
+
+    try {
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+
+      const [yr, mo] = monthVal.split('-');
+      let lastDayToCheck = new Date(parseInt(yr, 10), parseInt(mo, 10), 0, 12, 0, 0);
+
+      let isCurrentMonth = false;
+      if (lastDayToCheck >= today) {
+        lastDayToCheck = new Date(today);
+        lastDayToCheck.setDate(lastDayToCheck.getDate() - 1);
+        isCurrentMonth = true;
+      }
+
+      if (lastDayToCheck < new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1, 12, 0, 0)) {
+        div.className = "alert alert-success mt-2 p-2 small";
+        div.innerHTML = '<i class="bi bi-info-circle me-2"></i>Erre a hónapra még nincsenek ellenőrizhető napok.';
+        if (btn) btn.disabled = false;
+        return;
+      }
+
+      const email = cleanEmail(currentUserProfile?.email);
+      const startDateStr = `${monthVal}-01`;
+      const endDateStr = `${monthVal}-${String(lastDayToCheck.getDate()).padStart(2, '0')}`;
+
+      // 1. Munkalapok, Beküldött kérelmek és Szabadságok párhuzamos lekérése
+      const [logRes, reqRes, leaveRes] = await Promise.all([
+        supabaseClient.from('work_logs').select('*').gte('datum', startDateStr).lte('datum', endDateStr).ilike('user_email', email),
+        supabaseClient.from('requests').select('*').ilike('user_email', email),
+        supabaseClient.from('leave_requests').select('*').ilike('user_email', email)
+      ]);
+
+      if (logRes.error) throw logRes.error;
+
+      const logs = logRes.data || [];
+      const userRequests = reqRes.data || [];
+
+      // Kérelmek térképe dátum szerint
+      const requestMapByDate = {};
+      userRequests.forEach(r => {
+        if (r.datum) {
+          requestMapByDate[r.datum] = r;
+        }
+      });
+
+      const approvedLeaves = (leaveRes.data || []).filter(req => {
+        const st = String(req.status || req.statusz || '').toLowerCase().trim();
+        const isApproved = ['approved', 'elfogadva', 'jóváhagyva', 'jóváhagyott'].some(a => st.includes(a));
+        const rawType = String(req.tipus || req.jelleg || req.tavollet_tipusa || '').toLowerCase().trim();
+        const isHO = rawType.includes('home') || rawType.includes('office') || rawType === 'ho' || rawType.includes('otthoni');
+        return isApproved && !isHO;
+      });
+
+      // Távolléti tükörrekordok kiszűrése duplázódás ellen
+      const isAbsenceLog = (l) => {
+        const txt = normalizeStr((l.munkaszam || '') + ' ' + (l.vevo || '') + ' ' + (l.munka || ''));
+        return txt.includes('tavollet') || txt.includes('szabadsag') || txt.includes('betegseg');
+      };
+
+      const filteredLogs = logs.filter(l => !isAbsenceLog(l));
+
+      const limit = Number(currentUserProfile?.munkaido_keret || currentUserProfile?.napi_limit) || 8;
+      const alertThreshold = Math.max(0, limit - 2);
+      const cleanHolidays = (typeof holidayDates !== 'undefined' ? holidayDates : []).map(h => typeof normalizeDateStr === 'function' ? normalizeDateStr(h) : h);
+
+      let missingDays = [];
+      let currentD = new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1, 12, 0, 0);
+
+      while (currentD <= lastDayToCheck) {
+        const dY = currentD.getFullYear();
+        const dM = String(currentD.getMonth() + 1).padStart(2, '0');
+        const dD = String(currentD.getDate()).padStart(2, '0');
+        const dateStr = `${dY}-${dM}-${dD}`;
+
+        const belepStr = currentUserProfile?.belepett ? normalizeDateStr(currentUserProfile.belepett) : '';
+        const kilepStr = currentUserProfile?.kilepett ? normalizeDateStr(currentUserProfile.kilepett) : '';
+
+        if ((belepStr && dateStr < belepStr) || (kilepStr && dateStr > kilepStr)) {
+          currentD.setDate(currentD.getDate() + 1);
+          continue;
+        }
+
+        const dayOfWeek = currentD.getDay();
+        if (dayOfWeek !== 0 && !cleanHolidays.includes(dateStr)) {
+          const dayLogs = filteredLogs.filter(l => normalizeDateStr(l.datum) === dateStr);
+          let dayTotal = dayLogs.reduce((sum, l) => sum + (Number(l.oraszam) || 0), 0);
+
+          const dayLeaves = approvedLeaves.filter(req => {
+            const start = String(req.kezdo_datum || req.datum || req.start_date).substring(0, 10);
+            const end = String(req.veg_datum || req.kezdo_datum || req.datum || req.end_date).substring(0, 10);
+            return dateStr >= start && dateStr <= end;
+          });
+
+          dayLeaves.forEach(leave => {
+            const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || '').toLowerCase();
+            if (rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
+                rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr')) {
+              dayTotal += (Number(leave.oraszam) || 0);
+            } else {
+              dayTotal += limit;
+            }
+          });
+
+          if (dayTotal < alertThreshold) {
+            // STÁTUSZ MEGÁLLAPÍTÁSA ADOTT NAPRA:
+            const isOpen = await isWithinAllowedLoggingWindow(dateStr);
+            let dayStatus = 'CLOSED';
+
+            if (isOpen) {
+              dayStatus = 'OPEN';
+            } else {
+              const req = requestMapByDate[dateStr];
+              if (req) {
+                const st = String(req.status || '').toLowerCase().trim();
+                if (st.includes('pending') || st.includes('függő') || st.includes('fugg')) {
+                  dayStatus = 'PENDING';
+                }
+              }
+            }
+
+            missingDays.push({ date: dateStr, hours: dayTotal, required: limit, status: dayStatus });
+          }
+        }
+        currentD.setDate(currentD.getDate() + 1);
+      }
+
+      if (missingDays.length === 0) {
+        div.className = "alert alert-success mt-2 p-2 small";
+        div.innerHTML = `<i class="bi bi-check-circle me-2"></i>A(z) <strong>${monthVal}</strong> hónapban minden napod rendben van! 🎉`;
+      } else {
+        div.className = "alert alert-warning mt-2 p-2 small";
+        let listRows = missingDays.map(m => {
+          let actionBtnHtml = '';
+          
+          if (m.status === 'OPEN') {
+            actionBtnHtml = `<button class="btn btn-sm btn-success py-0 px-2 fw-bold" onclick="selectMissingDate('${m.date}')" title="Kattints a nap kiválasztásához"><i class="bi bi-check2 me-1"></i>Nyitva</button>`;
+          } else if (m.status === 'PENDING') {
+            actionBtnHtml = `<span class="badge bg-warning text-dark py-1 px-2"><i class="bi bi-clock-history me-1"></i>Függőben</span>`;
+          } else {
+            actionBtnHtml = `<button class="btn btn-sm btn-outline-danger fw-bold py-0 px-2" onclick="openRequestModal('${m.date}')"><i class="bi bi-unlock me-1"></i>Nyitási kérelem</button>`;
+          }
+
+          return `<div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+              <div><span><i class="bi bi-calendar-x me-2"></i><strong>${m.date}</strong></span> <span class="text-muted ms-2">(${(parseFloat(m.hours) || 0).toFixed(1)} / ${m.required} óra)</span></div>
+              <div>${actionBtnHtml}</div>
+            </div>`;
+        });
+        div.innerHTML = `<strong>Hiányos napjaid (${monthVal}):</strong><div class="mt-1">${listRows.join('')}</div>`;
+      }
+    } catch (e) {
+      div.className = "alert alert-danger mt-2 p-2 small";
+      div.innerHTML = "Szerver hiba történt: " + e.message;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // ELREJTÉS FÜGGVÉNY: Törli a listát és eltünteti önmagát
+  function hideMyMissing() {
+    const div = document.getElementById('myMissingResult');
+    const hideBtn = document.getElementById('hideMyMissingBtn');
+    
+    if (div) {
+      div.innerHTML = "";
+      div.style.display = 'none';
+    }
+    if (hideBtn) {
+      hideBtn.style.display = 'none';
+    }
+  }
+
+  function selectMissingDate(dateStr) {
+    const datePicker = document.getElementById('datePicker');
+    if (datePicker) {
+      datePicker.value = dateStr;
+      datePicker.dispatchEvent(new Event('change'));
+    }
+    showModal(`A(z) <strong>${dateStr}</strong> dátum kiválasztva. Töltsd ki a munkaszámot és az órákat a mentéshez!`, "Dátum kiválasztva");
+  }
+
   // HTML e-mail sablon a hiányzó órákról
   function buildReminderEmailHtml(workerName, missingDays) {
     const portalUrl = window.location.href.split('#')[0].split('?')[0];
@@ -2496,20 +2850,24 @@ function safeSetGlobalLoading(isLoading, message) {
   }
 
   function runApproveAllRequests() {
-    showModal("Biztosan véglegesíted az ÖSSZES jóváhagyásra váró pótlási kérelmet? A napok 24 órára megnyílnak a rögzítéshez.", "Véglegesítés megerősítése");
+    showModal("Válaszd ki, milyen státusszal szeretnéd véglegesíteni az <strong>ÖSSZES</strong> adminra váró kérelmet:", "Tömeges véglegesítés");
     const footer = document.getElementById('modalFooter');
     if (footer) {
       footer.innerHTML = `
-        <button class="btn btn-sm btn-success fw-bold" id="confirmFinalBtn">Igen, mehet</button>
-        <button class="btn btn-sm btn-secondary" onclick="closeModal()">Mégse</button>
+        <button class="btn btn-sm btn-warning fw-bold text-dark me-1" onclick="executeApproveAll('Büntetéses')">
+          <i class="bi bi-exclamation-triangle me-1"></i> Mind Büntetéses
+        </button>
+        <button class="btn btn-sm btn-success fw-bold me-1" onclick="executeApproveAll('Büntetlen')">
+          <i class="bi bi-check-circle me-1"></i> Mind Büntetlen
+        </button>
+        <button class="btn btn-sm btn-secondary mt-1 mt-md-0" onclick="closeModal()">Mégse</button>
       `;
-      document.getElementById('confirmFinalBtn').onclick = executeApproveAll;
     }
   }
 
-  async function executeApproveAll() {
+  async function executeApproveAll(mode) {
     closeModal();
-    setGlobalLoading(true, "Összes kérelem jóváhagyása...");
+    safeSetGlobalLoading(true, `Összes kérelem jóváhagyása (${mode})...`);
 
     try {
       const { data: pendingReqs, error: fetchErr } = await supabaseClient
@@ -2520,19 +2878,21 @@ function safeSetGlobalLoading(isLoading, message) {
       if (fetchErr) throw fetchErr;
 
       if (!pendingReqs || pendingReqs.length === 0) {
-        setGlobalLoading(false);
+        safeSetGlobalLoading(false);
         return showModal("Jelenleg nincs jóváhagyásra váró kérelem.", "Információ");
       }
 
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       const approvedAt = new Date().toISOString();
       const pendingIds = pendingReqs.map(r => r.id);
+      
+      const modeText = mode === 'Büntetéses' ? '[BÜNTETÉSES NYITÁS]' : '[BÜNTETLEN NYITÁS]';
 
       const { error: updateErr } = await supabaseClient
         .from('requests')
         .update({ 
           status: 'approved', 
-          approver_comment: 'Tömeges adminisztrátori jóváhagyás',
+          approver_comment: `Tömeges adminisztrátori jóváhagyás - ${modeText}`,
           expires_at: expiresAt, 
           approved_at: approvedAt 
         })
@@ -2546,18 +2906,136 @@ function safeSetGlobalLoading(isLoading, message) {
         const reqDate = req.datum || req.date;
 
         const subject = `Pótlási kérelem elfogadva - ${reqDate}`;
-        const body = `Szia ${targetName}!\n\nA(z) ${reqDate} napra vonatkozó pótlási kérelmedet az Adminisztrátor véglegesen jóváhagytak.\nA nap 24 órára megnyílt a rögzítéshez!`;
+        const body = `Szia ${targetName}!\n\nA(z) ${reqDate} napra vonatkozó pótlási kérelmedet az Adminisztrátor véglegesen jóváhagyta.\nA nap 24 órára megnyílt a rögzítéshez!`;
         
         sendAutomatedEmail(targetEmail, subject, body);
       }
 
-      setGlobalLoading(false);
-      showModal(`Sikeresen jóváhagyva <strong>${pendingReqs.length} db</strong> kérelem!`, "Siker");
+      safeSetGlobalLoading(false);
+      showModal(`Sikeresen jóváhagyva <strong>${pendingReqs.length} db</strong> kérelem (${modeText})!`, "Siker");
       if (typeof loadPendingRequests === "function") await loadPendingRequests();
 
     } catch (err) {
-      setGlobalLoading(false);
+      safeSetGlobalLoading(false);
       showModal("Hiba történt a jóváhagyás során: " + err.message, "Hiba");
+    }
+  }
+
+  // ==============================================================================
+  // NYITÁSI KÉRELMEK ÉS BÜNTETÉSEK EXPORTÁLÁSA CSV-BE
+  // ==============================================================================
+  async function exportRequestsToCsv() {
+    const btn = document.getElementById('exportRequestsBtn');
+    const monthInput = document.getElementById('exportRequestsMonth');
+    const monthVal = monthInput ? monthInput.value : "";
+
+    if (!monthVal) return showModal("Kérlek, válassz ki egy hónapot az exportáláshoz!", "Hiba");
+
+    if (btn) btn.disabled = true;
+    safeSetGlobalLoading(true, "Kérelmek betöltése...");
+
+    try {
+      const startDateStr = `${monthVal}-01`;
+      const [yr, mo] = monthVal.split('-');
+      const lastDay = new Date(parseInt(yr), parseInt(mo), 0).getDate();
+      const endDateStr = `${monthVal}-${String(lastDay).padStart(2, '0')}`;
+
+      // 1. Kérelmek lekérése az érintett dátum alapján
+      const { data: reqs, error } = await supabaseClient
+        .from('requests')
+        .select('*')
+        .gte('datum', startDateStr)
+        .lte('datum', endDateStr)
+        .order('datum', { ascending: true });
+
+      if (error) throw error;
+
+      if (!reqs || reqs.length === 0) {
+        safeSetGlobalLoading(false);
+        return showModal(`A(z) ${monthVal} hónapra nincsenek rögzített kérelmek.`, "Információ");
+      }
+
+      // 2. CSV Fejléc
+      const header = [
+        "Kérelmező neve", 
+        "E-mail", 
+        "Érintett nap", 
+        "Igényelt óra", 
+        "Munkaszám", 
+        "Dolgozói indoklás", 
+        "Státusz", 
+        "Típus (Büntetéses/Büntetlen)", 
+        "Döntéshozó", 
+        "Felettesi / Admin megjegyzés", 
+        "Beküldés ideje", 
+        "Elbírálás ideje"
+      ];
+      
+      let csvContent = "\uFEFF" + header.join(";") + "\r\n";
+
+      // 3. Adatok feldolgozása és szétválogatása
+      reqs.forEach(r => {
+        const nev = r.nev || r.user_email || "";
+        const email = r.user_email || "";
+        const datum = r.datum || "";
+        const oraszam = (Number(r.oraszam) || 0).toString().replace('.', ',');
+        const munkaszam = r.munkaszam || "";
+        const indoklas = r.indoklas || "";
+
+        // Státusz fordítása
+        const rawStatus = String(r.status).toLowerCase();
+        let statusLabel = rawStatus;
+        if (rawStatus === 'approved') statusLabel = 'Jóváhagyva';
+        else if (rawStatus === 'rejected') statusLabel = 'Elutasítva';
+        else if (rawStatus.includes('pending') || rawStatus.includes('fugg')) statusLabel = 'Függőben';
+
+        // Típus azonosítása a megjegyzésből
+        const comment = r.approver_comment || "";
+        let type = "Normál / Ismeretlen";
+        if (comment.includes('[BÜNTETÉSES NYITÁS]')) type = "BÜNTETÉSES";
+        else if (comment.includes('[BÜNTETLEN NYITÁS]')) type = "BÜNTETLEN";
+
+        // Döntéshozó és Tiszta megjegyzés kinyerése ("Név: [BÜNTETÉSES] - Indok")
+        let approver = r.approver_email || "";
+        let pureComment = comment;
+        
+        if (comment.includes(':')) {
+          approver = comment.split(':')[0].trim();
+          pureComment = comment.substring(comment.indexOf(':') + 1).trim();
+          
+          // Tisztítjuk a sallangot a CSV kedvéért
+          pureComment = pureComment.replace('[BÜNTETÉSES NYITÁS]', '').replace('[BÜNTETLEN NYITÁS]', '').replace('Jóváhagyva', '').replace('-', '').trim();
+        }
+
+        const createdAt = r.created_at ? new Date(r.created_at).toLocaleString('hu-HU') : "";
+        let actedAt = "";
+        if (r.approved_at) actedAt = new Date(r.approved_at).toLocaleString('hu-HU');
+        else if (r.rejected_at) actedAt = new Date(r.rejected_at).toLocaleString('hu-HU');
+
+        const rowValues = [
+          nev, email, datum, oraszam, munkaszam, indoklas, 
+          statusLabel, type, approver, pureComment, createdAt, actedAt
+        ];
+
+        let rowEscaped = rowValues.map(v => '"' + String(v || '').replace(/"/g, '""') + '"');
+        csvContent += rowEscaped.join(";") + "\r\n";
+      });
+
+      // 4. Fájl generálása és letöltése
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.setAttribute("href", URL.createObjectURL(blob));
+      link.setAttribute("download", `Spice_Nyitasok_Riport_${monthVal}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (err) {
+      showModal("Hiba az exportálás során: " + err.message, "Hiba");
+    } finally {
+      safeSetGlobalLoading(false);
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -2958,6 +3436,7 @@ function safeSetGlobalLoading(isLoading, message) {
     }
   }
 
+  // 1. ELBÍRÁLÁSI ABLAK MEGNYITÁSA
   async function openApprovalModal(requestId) {
     try {
       const { data: req, error } = await supabaseClient
@@ -2998,16 +3477,39 @@ function safeSetGlobalLoading(isLoading, message) {
       showModal(modalHtml, "Pótlási kérelem elbírálása");
 
       const footer = document.getElementById('modalFooter');
+      
+      const rawRole = (currentUserProfile?.jogosultsag || currentUserProfile?.role || 'user').toLowerCase().trim();
+      const isAdmin = rawRole.includes('admin') || rawRole.includes('boss');
+      const st = String(req.status).toLowerCase();
+      const isAdminPhase = st.includes('pending_admin') || st.includes('függőben') || st === 'pending';
+
       if (footer) {
-        footer.innerHTML = `
-          <button class="btn btn-success btn-sm fw-bold me-1" onclick="processApproval('${req.id}', 'approve')">
-            <i class="bi bi-check me-1"></i> Jóváhagyás
-          </button>
-          <button class="btn btn-danger btn-sm fw-bold me-1" onclick="processApproval('${req.id}', 'reject')">
-            <i class="bi bi-x me-1"></i> Elutasítás
-          </button>
-          <button class="btn btn-sm btn-secondary" onclick="closeModal()">Mégse</button>
-        `;
+        // HA ADMIN VAGY ÉS ADMIN FÁZISBAN VAN A KÉRELEM: BÜNTETÉSES / BÜNTETLEN GOMBOK
+        if (isAdmin && isAdminPhase) {
+          footer.innerHTML = `
+            <button class="btn btn-warning btn-sm fw-bold me-1 text-dark" onclick="processApproval('${req.id}', 'approve_penalty')">
+              <i class="bi bi-exclamation-triangle me-1"></i> Büntetéses nyitás
+            </button>
+            <button class="btn btn-success btn-sm fw-bold me-1" onclick="processApproval('${req.id}', 'approve_no_penalty')">
+              <i class="bi bi-check-circle me-1"></i> Büntetlen nyitás
+            </button>
+            <button class="btn btn-danger btn-sm fw-bold me-1" onclick="processApproval('${req.id}', 'reject')">
+              <i class="bi bi-x me-1"></i> Elutasítás
+            </button>
+            <button class="btn btn-sm btn-secondary mt-1 mt-md-0" onclick="closeModal()">Mégse</button>
+          `;
+        } else {
+          // FELETTESI FÁZIS (Sima jóváhagyás)
+          footer.innerHTML = `
+            <button class="btn btn-success btn-sm fw-bold me-1" onclick="processApproval('${req.id}', 'approve')">
+              <i class="bi bi-check me-1"></i> Jóváhagyás
+            </button>
+            <button class="btn btn-danger btn-sm fw-bold me-1" onclick="processApproval('${req.id}', 'reject')">
+              <i class="bi bi-x me-1"></i> Elutasítás
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="closeModal()">Mégse</button>
+          `;
+        }
       }
     } catch (err) {
       showModal("Hiba a kérelem betöltésekor: " + err.message, "Hiba");
@@ -3031,8 +3533,12 @@ function safeSetGlobalLoading(isLoading, message) {
       const isAdmin = rawRole.includes('admin') || rawRole.includes('boss');
       const approverName = currentUserProfile?.nev || currentUserProfile?.email || 'Felettes';
 
-      const defaultText = action === 'reject' ? 'Elutasítva' : 'Jóváhagyva';
-      const commentToAdd = newComment ? `${approverName}: ${newComment}` : `${approverName}: ${defaultText}`;
+      let defaultText = 'Jóváhagyva';
+      if (action === 'reject') defaultText = 'Elutasítva';
+      else if (action === 'approve_penalty') defaultText = '[BÜNTETÉSES NYITÁS]';
+      else if (action === 'approve_no_penalty') defaultText = '[BÜNTETLEN NYITÁS]';
+
+      const commentToAdd = newComment ? `${approverName}: ${defaultText} - ${newComment}` : `${approverName}: ${defaultText}`;
 
       let existingComment = (req.approver_comment || '').trim();
       let finalComment = existingComment ? `${existingComment} | ${commentToAdd}` : commentToAdd;
@@ -3055,10 +3561,10 @@ function safeSetGlobalLoading(isLoading, message) {
         const subject = `Pótlási kérelem elutasítva - ${req.datum}`;
         const bodyText = `Szia ${req.nev}!\n\nA(z) ${req.datum} napra benyújtott pótlási kérelmedet elutasították.\nMegjegyzés: "${finalComment}"`;
         const htmlBodyText = `<div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <h3 style="color: #ff3860; margin-top: 0; font-size: 16px;">Kérelem elutasítva</h3>
+          <h3 style="color: #dc2626; margin-top: 0; font-size: 16px;">Kérelem elutasítva</h3>
           <p style="font-size: 14px; color: #4a4a4a;">Szia <strong>${escapeHtml(req.nev)}</strong>!</p>
           <p style="font-size: 14px; color: #4a4a4a;">A(z) <strong>${req.datum}</strong> napra vonatkozó pótlási kérelmedet sajnos elutasították.</p>
-          <div style="background-color: #fffdfd; padding: 12px; border-left: 4px solid #ff3860; margin: 15px 0; font-style: italic; font-size: 13px; color: #333333;">"Megjegyzés: ${escapeHtml(finalComment)}"</div>
+          <div style="background-color: #fffdfd; padding: 12px; border-left: 4px solid #dc2626; margin: 15px 0; font-style: italic; font-size: 13px; color: #333333;">"Megjegyzés: ${escapeHtml(finalComment)}"</div>
         </div>`;
         sendAutomatedEmail(req.user_email, subject, bodyText, htmlBodyText);
 
@@ -3069,7 +3575,7 @@ function safeSetGlobalLoading(isLoading, message) {
             .from('requests')
             .update({
               status: 'approved',
-              approver_comment: finalComment,
+              approver_comment: finalComment, // Az adatbázisban megmarad a büntetés jelölése a riporthoz!
               expires_at: expiresAt,
               approved_at: new Date().toISOString()
             })
@@ -3080,17 +3586,26 @@ function safeSetGlobalLoading(isLoading, message) {
           closeModal();
           showModal(`A(z) ${req.datum} nap megnyitva 24 órára ${req.nev} részére!`, "Siker");
 
+          // Megjegyzés tisztítása az e-mailhez (hogy a dolgozó ne lássa a belső büntetési címkét)
+          const cleanDisplayComment = finalComment
+            .replace('[BÜNTETÉSES NYITÁS]', '')
+            .replace('[BÜNTETLEN NYITÁS]', '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
           const subject = `Pótlási kérelem elfogadva - ${req.datum}`;
           const bodyText = `Szia ${req.nev}!\n\nA(z) ${req.datum} napra vonatkozó pótlási kérelmedet véglegesen jóváhagytuk.\nA nap 24 órára megnyílt a rögzítéshez!`;
           const htmlBodyText = `<div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <h3 style="color: #48c774; margin-top: 0; font-size: 16px;">Kérelem jóváhagyva</h3>
+            <h3 style="color: #16a34a; margin-top: 0; font-size: 16px;">Kérelem jóváhagyva 🔓</h3>
             <p style="font-size: 14px; color: #4a4a4a;">Szia <strong>${escapeHtml(req.nev)}</strong>!</p>
             <p style="font-size: 14px; color: #4a4a4a;">A(z) <strong>${req.datum}</strong> napra vonatkozó pótlási kérelmedet véglegesen jóváhagytuk. A nap 24 órára megnyílt a rögzítéshez.</p>
-            <div style="background-color: #f5f5f5; padding: 12px; border-left: 4px solid #48c774; margin: 15px 0; font-style: italic; font-size: 13px; color: #333333;">"Megjegyzés: ${escapeHtml(finalComment)}"</div>
+            ${cleanDisplayComment ? `<div style="background-color: #f8fafc; padding: 12px; border-left: 4px solid #16a34a; margin: 15px 0; font-style: italic; font-size: 13px; color: #333333;">"Megjegyzés: ${escapeHtml(cleanDisplayComment)}"</div>` : ''}
           </div>`;
+          
           sendAutomatedEmail(req.user_email, subject, bodyText, htmlBodyText);
 
         } else {
+          // Felettesi jóváhagyás értesítése az adminnak
           const { error } = await supabaseClient
             .from('requests')
             .update({
