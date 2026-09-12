@@ -579,6 +579,56 @@
   .btn-group, select, .form-select, .table-responsive {
     max-width: 100% !important;
   }
+
+  /* --- ÚJ JAVÍTÁSOK CSAK A CSAPAT TÚLÓRA ÉS KIFIZETÉS KEZELŐ WIDGETEKHEZ --- */
+
+/* 1. Csapat Túlóra Kártya mobilos elrendezésének védelme */
+.team-budget-widget-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 15px !important;
+}
+
+@media screen and (max-width: 768px) {
+  .team-budget-widget-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .team-budget-widget-container > div {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+}
+
+/* 2. Előzmények táblázat mobil "kártyás" nézetének védelme a szétcsúszástól */
+#view-overtime-manager .table-responsive:not(.matrix-container) td {
+  text-align: right !important; /* Jobbra zárja az értékeket a data-label után */
+}
+
+#view-overtime-manager .table-responsive:not(.matrix-container) td[data-label="Munkatárs"] {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  background-color: #f8fafc !important; /* Finom háttér a névnek */
+  border-radius: 8px !important;
+  padding: 10px !important;
+  margin-bottom: 5px !important;
+}
+
+#view-overtime-manager .table-responsive:not(.matrix-container) td[data-label="Munkatárs"]::before {
+  display: none !important; /* Rejtjük a "Munkatárs:" feliratot a kártya fejlécéből */
+}
+
+/* Kis font méretek és gomb igazítások a mobilos táblázat kártyákhoz */
+#view-overtime-manager .btn-sm {
+  width: auto !important;
+  padding: 4px 12px !important;
+}
 </style>
 </head>
 <body>
@@ -5170,7 +5220,7 @@ async function saveTeamBudget(groupName) {
   }
 }
 
-// CSAPAT BÜDZSÉ KÁRTYA FRISSÍTÉSE A CSAPAT BÍRÁLAT FÜLÖN (CORREKT 100%+ SZÁZALÉKOKKAL)
+// CSAPAT BÜDZSÉ KÁRTYA FRISSÍTÉSE A CSAPAT BÍRÁLAT FÜLÖN (RESZPONZÍV MOBIL NÉZETTEL)
 async function updateTeamBudgetWidget(selectedGroup = 'ALL') {
   const container = document.getElementById('teamBudgetSummaryWidget');
   if (!container) return;
@@ -5231,9 +5281,11 @@ async function updateTeamBudgetWidget(selectedGroup = 'ALL') {
     const groupTitle = selectedGroup === 'ALL' ? 'Minden csoport együttvéve' : `${escapeHtml(selectedGroup.toUpperCase())}`;
 
     container.innerHTML = `
-      <div class="p-3 bg-white rounded border ${isNegative ? 'border-danger' : 'border-success-subtle'} shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="p-3 bg-white rounded border ${isNegative ? 'border-danger' : 'border-success-subtle'} shadow-sm d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-3">
+        
+        <!-- Ikon és Csapat név -->
         <div class="d-flex align-items-center gap-3">
-          <div class="p-2 ${isNegative ? 'bg-danger text-danger' : 'bg-success text-success'} bg-opacity-10 rounded-circle">
+          <div class="p-2 ${isNegative ? 'bg-danger text-danger' : 'bg-success text-success'} bg-opacity-10 rounded-circle flex-shrink-0">
             <i class="bi bi-wallet2 fs-4"></i>
           </div>
           <div>
@@ -5242,18 +5294,20 @@ async function updateTeamBudgetWidget(selectedGroup = 'ALL') {
           </div>
         </div>
 
-        <div class="d-flex gap-4 text-center">
-          <div>
+        <!-- Pénzügyi adatok (Mobilon teljes szélességű eloszlás, asztalin középre zárt) -->
+        <div class="d-flex justify-content-between justify-content-md-center gap-3 gap-md-4 text-center border-top border-bottom py-2 py-md-0 border-md-0 my-1 my-md-0">
+          <div class="text-start text-md-center">
             <span class="text-muted small d-block">Jóváhagyott kifizetések</span>
             <span class="fw-bold text-dark">${totalSpent.toLocaleString('hu-HU')} Ft</span>
           </div>
-          <div>
+          <div class="text-end text-md-center">
             <span class="text-muted small d-block">Elérhető szabad keret</span>
             <span class="fw-bold fs-6 ${isNegative ? 'text-danger' : 'text-success'}">${remaining.toLocaleString('hu-HU')} Ft</span>
           </div>
         </div>
 
-        <div style="min-width: 140px;">
+        <!-- Progress bar (Mobilon teljes szélesség, asztalin fix minimum szélesség) -->
+        <div class="w-100" style="max-width: 100%; flex-xs: 1; flex-md: 0 0 180px;">
           <div class="d-flex justify-content-between small text-muted mb-1">
             <span>Keret felhasználva</span>
             <span class="fw-bold ${isNegative ? 'text-danger' : ''}">${percentText}</span>
@@ -5262,6 +5316,7 @@ async function updateTeamBudgetWidget(selectedGroup = 'ALL') {
             <div class="progress-bar ${isNegative || barPercent > 90 ? 'bg-danger' : (barPercent > 70 ? 'bg-warning' : 'bg-success')}" role="progressbar" style="width: ${barPercent}%;"></div>
           </div>
         </div>
+
       </div>
     `;
   } catch (err) {
@@ -5328,18 +5383,19 @@ async function loadPayoutHistory() {
       
       const isChallenged = safeNorm(d.status) === 'challenged' || safeNorm(d.status).includes('modositva');
 
+      // data-label attribútumok hozzáadva a mobilos reszponzivitáshoz
       return `
         <tr>
-          <td class="text-start fw-bold text-dark">${name}</td>
-          <td><span class="badge bg-light text-dark border">${dateStr}</span></td>
-          <td>${cat}</td>
-          <td class="fw-semibold">${hours} óra</td>
-          <td>
+          <td data-label="Munkatárs" class="text-start fw-bold text-dark">${name}</td>
+          <td data-label="Dátum / Hónap"><span class="badge bg-light text-dark border">${dateStr}</span></td>
+          <td data-label="Kategória">${cat}</td>
+          <td data-label="Óra" class="fw-semibold">${hours} óra</td>
+          <td data-label="Összeg">
             <span class="fw-bold text-success">${amount.toLocaleString('hu-HU')} Ft</span>
             ${isChallenged ? '<small class="text-warning d-block" style="font-size:0.7rem;">(Módosítva)</small>' : ''}
           </td>
-          <td class="small text-muted">${submitter}</td>
-          <td class="small text-muted fw-semibold">${approver}</td>
+          <td data-label="Igénylő" class="small text-muted">${submitter}</td>
+          <td data-label="Jóváhagyó" class="small text-muted fw-semibold">${approver}</td>
         </tr>
       `;
     }).join('');
