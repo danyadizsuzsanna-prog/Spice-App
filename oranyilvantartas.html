@@ -963,6 +963,12 @@
       }
 
       currentUserProfile = profile;
+
+      // HELYETTESÍTÉSI DELEGÁLT JOGOK BETÖLTÉSE A TÁVOLLÉVŐ VEZETŐKTŐL
+      if (typeof getDelegatedGroupsForCurrentUser === 'function') {
+        window.delegatedGroups = await getDelegatedGroupsForCurrentUser();
+      }
+
       userStaticData = {
         name: profile.nev,
         email: profile.email,
@@ -1282,48 +1288,61 @@
   }
 
   function parseLeaveHours(leave, dailyLimit) {
-    if (!leave) return 0;
+  if (!leave) return 0;
 
-    let limit = 8;
-    if (typeof dailyLimit === 'object' && dailyLimit !== null) {
-      limit = Number(dailyLimit.munkaido_keret || dailyLimit.napi_limit) || 8;
-    } else {
-      limit = Number(dailyLimit) || 8;
-    }
+  let limit = 8;
+  if (typeof dailyLimit === 'object' && dailyLimit !== null) {
+    limit = Number(dailyLimit.munkaido_keret || dailyLimit.napi_limit) || 8;
+  } else {
+    limit = Number(dailyLimit) || 8;
+  }
 
-    const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || leave.request_type || '').toLowerCase().trim();
+  // Ékezetmentesített típusvizsgálat
+  const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || leave.request_type || '');
+  const normType = rawType
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 
-    const isHourly = rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
-                     rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr');
+  // Óraalapú típusok felismerése (Csúsztatás, Ünnep, Tréning, Ügyfél)
+  const isHourly = normType.includes('csusztat') || normType === 'cs' || 
+                   normType.includes('unnep') || normType === 'u' || 
+                   normType.includes('trening') || normType.includes('tr') || 
+                   normType.includes('ugyfel');
 
-    if (!isHourly) return limit;
+  // Ha NEM óraalapú (pl. rendes szabadság, betegszabadság), marad a napi limit (8 óra)
+  if (!isHourly) return limit;
 
-    const directOraszam = Number(leave.oraszam || leave.horas || 0);
-    if (directOraszam > 0) return directOraszam;
+  // 1. Közvetlen óraszám mező ellenőrzése
+  const directOraszam = Number(leave.oraszam || leave.horas || leave.ora || leave.hours || 0);
+  if (directOraszam > 0) return directOraszam;
 
-    const startStr = String(leave.kezdo_ido || leave.start_time || leave.kezdeti_ido || '').trim();
-    const endStr = String(leave.veg_ido || leave.end_time || leave.vegso_ido || '').trim();
+  // 2. Kezdő és vég időpontok közötti időkülönbség kiszámítása (pl. 08:00 - 10:00)
+  const startStr = String(leave.kezdo_ido || leave.start_time || leave.kezdeti_ido || leave.kezdet || '').trim();
+  const endStr = String(leave.veg_ido || leave.end_time || leave.vegso_ido || leave.vege || '').trim();
 
-    if (startStr && endStr && startStr.includes(':') && endStr.includes(':')) {
-      const [h1, m1] = startStr.split(':').map(n => parseInt(n, 10) || 0);
-      const [h2, m2] = endStr.split(':').map(n => parseInt(n, 10) || 0);
+  if (startStr && endStr && startStr.includes(':') && endStr.includes(':')) {
+    const [h1, m1] = startStr.split(':').map(n => parseInt(n, 10) || 0);
+    const [h2, m2] = endStr.split(':').map(n => parseInt(n, 10) || 0);
+    const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diffMins > 0) return diffMins / 60;
+  }
+
+  // 3. Intervallum szöveg kiolvasása (pl. "08:00 - 10:00")
+  const intervalStr = String(leave.ido || leave.időtartam || leave.ido_intervallum || leave.intervallum || '').trim();
+  if (intervalStr.includes('-')) {
+    const parts = intervalStr.split('-').map(s => s.trim());
+    if (parts.length === 2 && parts[0].includes(':') && parts[1].includes(':')) {
+      const [h1, m1] = parts[0].split(':').map(n => parseInt(n, 10) || 0);
+      const [h2, m2] = parts[1].split(':').map(n => parseInt(n, 10) || 0);
       const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
       if (diffMins > 0) return diffMins / 60;
     }
-
-    const intervalStr = String(leave.ido || leave.időtartam || leave.ido_intervallum || '').trim();
-    if (intervalStr.includes('-')) {
-      const parts = intervalStr.split('-').map(s => s.trim());
-      if (parts.length === 2 && parts[0].includes(':') && parts[1].includes(':')) {
-        const [h1, m1] = parts[0].split(':').map(n => parseInt(n, 10) || 0);
-        const [h2, m2] = parts[1].split(':').map(n => parseInt(n, 10) || 0);
-        const diffMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-        if (diffMins > 0) return diffMins / 60;
-      }
-    }
-
-    return 0;
   }
+
+  return 0;
+}
 
   async function updateJobList() {
     const dv = document.getElementById('datePicker').value;
@@ -1489,14 +1508,21 @@
       });
 
       activeLeaves.forEach(leave => {
-        const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || '').toLowerCase();
+        const rawType = String(leave.tipus || leave.jelleg || leave.tavollet_tipusa || '');
+        const normType = rawType
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+
         const hours = parseLeaveHours(leave, dailyLimit);
 
-        let label = "Távollét (szabadság, betegség)";
-        if (rawType.includes('csúsztat') || rawType.includes('csusztat') || rawType === 'cs' || 
-            rawType.includes('ünnep') || rawType === 'ü' || rawType.includes('tr')) {
-          label = "Csúsztatás / Extra órák";
-        }
+        const isHourly = normType.includes('csusztat') || normType === 'cs' || 
+                         normType.includes('unnep') || normType === 'u' || 
+                         normType.includes('trening') || normType.includes('tr') || 
+                         normType.includes('ugyfel');
+
+        let label = isHourly ? (leave.tipus || 'Óraalapú távollét') : "Távollét (szabadság, betegség)";
 
         if (hours > 0) {
           dailyTotal += hours;
@@ -1507,7 +1533,7 @@
                   <i class="bi bi-calendar-check-fill me-1"></i> ${escapeHtml(label)}
                 </div>
                 <div class="text-muted small text-truncate" style="font-size: 0.75rem;">
-                  Jóváhagyva a SzabadságKezelőben (${escapeHtml(leave.tipus || 'Csúsztatás')})
+                  Jóváhagyva a SzabadságKezelőben (${escapeHtml(leave.tipus || 'Távollét')})
                 </div>
               </div>
               <div class="text-end flex-shrink-0 ms-2" style="white-space: nowrap;">
@@ -1530,7 +1556,7 @@
       hoursDisplay.innerText = "0.00";
       div.style.display = 'none';
     }
-  }
+}
 
   function deleteEntry(rawIds, jobNum) {
     if (document.getElementById('deleteModalJobIdDisplay')) document.getElementById('deleteModalJobIdDisplay').innerText = jobNum;
@@ -2073,16 +2099,14 @@
 
       const role = (currentUserProfile.jogosultsag || currentUserProfile.role || 'user').toLowerCase().trim();
       const myEmail = cleanEmail(currentUserProfile.email);
-      let targetGroupsStr = (currentUserProfile.latott_csoportok || '').trim() || currentUserProfile.csoport || '';
-      
-      const allowedGroups = targetGroupsStr.split(',').map(g => g.trim().toLowerCase()).filter(g => g && g !== 'vezetőség' && g !== 'vezetoseg');
 
+      // SZŰRÉS AZ isGroupAllowedForLeader ÉS KÖZVETLEN ALÁRENDELTSÉGEK ALAPJÁN (DELEGÁLÁSSAL)
       let profiles = (role === 'admin' || role === 'boss') ? allProfiles : allProfiles.filter(p => {
         const pEmail = cleanEmail(p.email);
         if (pEmail === myEmail) return true;
         if (cleanEmail(p.manager_email).includes(myEmail) || cleanEmail(p.leader_email).includes(myEmail) || cleanEmail(p.csoportvezeto_email).includes(myEmail)) return true;
-        const pGroup = (p.csoport || '').toLowerCase().trim();
-        return pGroup && allowedGroups.length > 0 && allowedGroups.some(allowed => pGroup === allowed || pGroup.startsWith(allowed + '-'));
+        const pGroup = p.display_csoport || p.csoport || '';
+        return typeof isGroupAllowedForLeader === 'function' ? isGroupAllowedForLeader(pGroup) : true;
       });
 
       if (!profiles || profiles.length === 0) {
@@ -2170,7 +2194,7 @@
           days.push({ t: dayTotal, d: dayDowntime });
         }
 
-        let displayGroup = (p.csoport || '').trim();
+        let displayGroup = (p.display_csoport || p.csoport || '').trim();
         const cleanG = displayGroup.toLowerCase();
         if ((!displayGroup || cleanG === 'vezetőség' || cleanG === 'vezetoseg') && p.latott_csoportok) {
           displayGroup = p.latott_csoportok.split(',')[0].trim() || 'Egyéb';
@@ -2191,7 +2215,7 @@
         dayMeta[d] = (dt.getDay() === 0) ? "sunday-col" : (cleanHolidays.includes(ds) || dt.getDay() === 6 ? "holiday-col" : "");
       }
       
-      let html = `<div class="table-container matrix-container border rounded"><table class="table table-sm table-bordered table-striped mb-0"><thead><tr><th class="sticky-col">Név</th><th title="Havi állásidő összesen">Állás</th><th>Össz</th><th title="Havi túlóra (limit felett)">Túl</th>`;
+      let html = `<div class="table-container matrix-container border rounded"><table class="table table-sm table-bordered table-striped mb-0"><thead><tr><th class="sticky-col">Név</th><th title="Havi állásidő összesen">Állás</th><th>Össz</th><th title="Havi túlmunka (limit felett)">Túl</th>`;
       for (let d = 1; d <= lastDay; d++) html += `<th class="${dayMeta[d]}">${d}</th>`;
       html += `</tr></thead><tbody>`;
       
@@ -3204,101 +3228,157 @@ function safeSetGlobalLoading(isLoading, message) {
   }
 
   async function runExport() {
-    const btn = document.getElementById('exportCsvBtn');
-    const monthSelect = document.getElementById('exportMonthSelect');
-    const month = monthSelect ? monthSelect.value : "";
+  const btn = document.getElementById('exportCsvBtn');
+  const monthSelect = document.getElementById('exportMonthSelect');
+  const month = monthSelect ? monthSelect.value : "";
 
-    if (!month) return showModal("Válassz hónapot!", "Hiba");
+  if (!month) return showModal("Válassz hónapot!", "Hiba");
 
-    if (btn) btn.disabled = true;
+  if (btn) btn.disabled = true;
 
-    try {
-      const [yr, mo] = month.split('-');
-      const lastDay = new Date(parseInt(yr), parseInt(mo), 0).getDate();
-      const startDateStr = `${month}-01`;
-      const endDateStr = `${month}-${String(lastDay).padStart(2, '0')}`;
+  try {
+    const [yr, mo] = month.split('-');
+    const lastDay = new Date(parseInt(yr), parseInt(mo), 0).getDate();
+    const startDateStr = `${month}-01`;
+    const endDateStr = `${month}-${String(lastDay).padStart(2, '0')}`;
 
-      let allLogs = [];
-      let fromIdx = 0;
-      const step = 1000;
+    // 1. WORK_LOGS LEKÉRÉSE (PAGINÁLVA)
+    let allLogs = [];
+    let fromIdx = 0;
+    const step = 1000;
 
-      while (true) {
-        const { data: chunk, error } = await supabaseClient
-          .from('work_logs')
-          .select('*')
-          .gte('datum', startDateStr)
-          .lte('datum', endDateStr)
-          .range(fromIdx, fromIdx + step - 1);
+    while (true) {
+      const { data: chunk, error } = await supabaseClient
+        .from('work_logs')
+        .select('*')
+        .gte('datum', startDateStr)
+        .lte('datum', endDateStr)
+        .range(fromIdx, fromIdx + step - 1);
 
-        if (error) throw error;
-        if (chunk && chunk.length > 0) allLogs.push(...chunk);
-        if (!chunk || chunk.length < step) break;
-        fromIdx += step;
+      if (error) throw error;
+      if (chunk && chunk.length > 0) allLogs.push(...chunk);
+      if (!chunk || chunk.length < step) break;
+      fromIdx += step;
+    }
+
+    if (allLogs.length === 0) return showModal("Nincs exportálható adat a választott hónapra.", "Információ");
+
+    // 2. ÖSSZES PROJEKT LEKÉRÉSE PAGINÁLVA (NYITOTT ÉS ZÁRT IS, 1000 FELETT IS)
+    let projData = [];
+    let pFrom = 0;
+    while (true) {
+      const { data: pChunk, error: pErr } = await supabaseClient
+        .from('projects')
+        .select('*')
+        .range(pFrom, pFrom + step - 1);
+
+      if (pErr) break;
+      if (pChunk && pChunk.length > 0) projData.push(...pChunk);
+      if (!pChunk || pChunk.length < step) break;
+      pFrom += step;
+    }
+
+    // Projekt törzsadat mappa építése
+    const masterMap = {};
+    projData.forEach(p => {
+      const rawKey = (p.munkaszam || p.kod || '').toString().trim();
+      if (rawKey) {
+        masterMap[rawKey.toLowerCase()] = p;
+        if (typeof cleanJobId === 'function') {
+          masterMap[cleanJobId(rawKey)] = p;
+        }
+      }
+    });
+
+    // 3. PROFILOK LEKÉRÉSE
+    const { data: profiles } = await supabaseClient.from('profiles').select('*');
+    const profileMap = {};
+    (profiles || []).forEach(p => {
+      const email = cleanEmail(p.email);
+      if (email) profileMap[email] = p;
+    });
+
+    const header = ["Munkaszám", "Munka neve", "Csoportkód", "Vevőkód", "Sztenderd/Ad-hoc", "Típus", "Név", "Pozíció", "Hónap", "Óra", "Dátum"];
+    let csvContent = "\uFEFF" + header.join(";") + "\r\n";
+
+    allLogs.forEach(row => {
+      const rawMunkaszam = (row.munkaszam || '').toString().trim();
+      const rawMunka = (row.munka || '').toString().trim();
+      const rawVevo = (row.vevo || '').toString().trim();
+
+      let candidateKey = rawMunkaszam || rawMunka;
+      let proj = null;
+
+      if (candidateKey) {
+        const k1 = candidateKey.toLowerCase();
+        const k2 = typeof cleanJobId === 'function' ? cleanJobId(candidateKey) : k1;
+        proj = masterMap[k1] || masterMap[k2] || null;
       }
 
-      if (allLogs.length === 0) return showModal("Nincs exportálható adat a választott hónapra.", "Információ");
+      let munkaszam = "";
+      let munkaNeve = "";
+      let vevokod = "";
+      let csoportkod = "";
+      let sztenderdAdhoc = "";
+      let tipus = "";
 
-      let projData = [];
-      const { data: pData1 } = await supabaseClient.from('projects').select('*');
-      projData = pData1 || [];
+      const email = cleanEmail(row.user_email);
+      const prof = profileMap[email] || {};
 
-      const masterMap = {};
-      projData.forEach(p => {
-        const key = (p.munkaszam || p.kod || '').toString().trim().toLowerCase();
-        if (key) masterMap[key] = p;
-      });
+      if (proj) {
+        munkaszam = proj.munkaszam || proj.kod || candidateKey;
+        munkaNeve = proj.munka || proj.munka_neve || proj.megnevezes || rawMunka || rawVevo;
+        vevokod = proj.vevokod || proj.vevo_kod || proj.vevo || rawVevo;
+        csoportkod = proj.csoportkod || proj.csoport_kod || proj.csoportkod_acc || proj.csoport || prof.csoport || "";
+        sztenderdAdhoc = proj.sztenderd_adhoc || proj.sztenderd || proj.sztenderd_adhoc_st || proj.tipus_st || "";
+        tipus = proj.tipus || proj.kategoria || "";
+      } else {
+        munkaszam = rawMunkaszam || rawMunka || rawVevo;
+        munkaNeve = rawMunkaszam ? rawMunka : (rawMunka !== munkaszam ? rawMunka : rawVevo);
+        if (munkaNeve === munkaszam) munkaNeve = rawVevo;
+        vevokod = rawVevo !== munkaNeve && rawVevo !== munkaszam ? rawVevo : "";
+        csoportkod = prof.csoport || "";
+      }
 
-      const { data: profiles } = await supabaseClient.from('profiles').select('*');
-      const profileMap = {};
-      (profiles || []).forEach(p => {
-        const email = cleanEmail(p.email);
-        if (email) profileMap[email] = p;
-      });
+      const nev = row.nev || prof.nev || email;
+      const pozicio = row.pozicio || prof.pozicio || "";
+      const honap = row.honap || month;
+      const ora = (Number(row.oraszam) || 0).toString().replace('.', ',');
+      const datum = row.datum || "";
 
-      const header = ["Munkaszám", "Munka neve", "Csoportkód", "Vevőkód", "Sztenderd/Ad-hoc", "Típus", "Név", "Pozíció", "Hónap", "Óra", "Dátum"];
-      let csvContent = "\uFEFF" + header.join(";") + "\r\n";
+      const rowValues = [
+        munkaszam,
+        munkaNeve,
+        csoportkod,
+        vevokod,
+        sztenderdAdhoc,
+        tipus,
+        nev,
+        pozicio,
+        honap,
+        ora,
+        datum
+      ];
 
-      allLogs.forEach(row => {
-        const mNum = (row.munkaszam || '').toString().trim();
-        const mKey = mNum.toLowerCase();
-        const proj = masterMap[mKey] || {};
-        
-        const email = cleanEmail(row.user_email);
-        const prof = profileMap[email] || {};
+      let rowEscaped = rowValues.map(v => '"' + String(v || '').replace(/"/g, '""') + '"');
+      csvContent += rowEscaped.join(";") + "\r\n";
+    });
 
-        const munkaszam = mNum;
-        const munkaNeve = row.munka || proj.munka_neve || proj.munka || proj.megnevezes || (mNum.includes('(') ? mNum : "");
-        const csoportkod = proj.csoportkod || proj.csoport_kod || proj.csoport || prof.csoport || "";
-        const vevokod = row.vevo || proj.vevokod || proj.vevo_kod || proj.vevo || "";
-        const sztenderdAdhoc = proj.sztenderd_adhoc || proj.sztenderd || proj.tipus || "";
-        const tipus = proj.tipus || proj.kategoria || "";
-        const nev = row.nev || prof.nev || email;
-        const pozicio = row.pozicio || prof.pozicio || "";
-        const honap = row.honap || month;
-        const ora = (Number(row.oraszam) || 0).toString().replace('.', ',');
-        const datum = row.datum || "";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.setAttribute("href", URL.createObjectURL(blob));
+    link.setAttribute("download", "Spice_Export_" + month + ".csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-        const rowValues = [munkaszam, munkaNeve, csoportkod, vevokod, sztenderdAdhoc, tipus, nev, pozicio, honap, ora, datum];
-
-        let rowEscaped = rowValues.map(v => '"' + String(v || '').replace(/"/g, '""') + '"');
-        csvContent += rowEscaped.join(";") + "\r\n";
-      });
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.setAttribute("href", URL.createObjectURL(blob));
-      link.setAttribute("download", "Spice_Export_" + month + ".csv");
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-    } catch (err) {
-      showModal("Szerver hiba az export során: " + err.message, "Hiba");
-    } finally {
-      if (btn) btn.disabled = false;
-    }
+  } catch (err) {
+    showModal("Szerver hiba az export során: " + err.message, "Hiba");
+  } finally {
+    if (btn) btn.disabled = false;
   }
+}
 
   function getNextApproverEmail(profile) {
     const adminEmail = 'admin.oranyilvantartas@spicecommunication.hu';
@@ -3366,7 +3446,12 @@ function safeSetGlobalLoading(isLoading, message) {
     const safeJobNumber = jobNumber || "";
 
     try {
-      const nextApprover = getNextApproverEmail(currentUserProfile);
+      // DELEGÁLÁS: Döntéshozó dinamikus felülbírálása (helyetteshez irányítás, ha a felettes szabadságon van)
+      const baseApprover = getNextApproverEmail(currentUserProfile);
+      const nextApprover = typeof getEffectiveApproverEmail === 'function' 
+        ? await getEffectiveApproverEmail(baseApprover) 
+        : baseApprover;
+
       const isDirectAdmin = (nextApprover === 'admin.oranyilvantartas@spicecommunication.hu');
       
       const initialStatus = isDirectAdmin ? 'pending_admin' : 'pending_level1';
@@ -3420,7 +3505,7 @@ function safeSetGlobalLoading(isLoading, message) {
     } catch (err) {
       showModal("Hiba a kérelem beküldésekor: " + err.message, "Hiba");
     }
-  }
+}
 
   async function handleUrlParameters() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -4428,6 +4513,120 @@ async function loadTsCreativeData() {
       resContainer.innerHTML = `<div class="alert alert-danger">Hiba a lekérdezés során: ${err.message}</div>`;
     }
   }
+}
+
+// ÚJ FÜGGVÉNY: Megkeresi, hogy a célzott vezető épp szabadságon van-e, és ki a helyettese
+async function getEffectiveApproverEmail(targetEmail) {
+  if (!targetEmail || targetEmail === 'admin.oranyilvantartas@spicecommunication.hu') return targetEmail;
+
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabaseClient
+      .from('leave_requests')
+      .select('helyettes_email')
+      .eq('user_email', targetEmail)
+      .eq('status', 'approved')
+      .lte('kezdo_datum', todayStr)
+      .gte('veg_datum', todayStr)
+      .not('helyettes_email', 'is', null)
+      .neq('helyettes_email', '');
+
+    if (!error && data && data.length > 0) {
+      console.log(`[Delegálás] ${targetEmail} szabadságon van. Aktív helyettes: ${data[0].helyettes_email}`);
+      return data[0].helyettes_email;
+    }
+  } catch (err) {
+    console.error("Hiba a helyettes keresésekor:", err);
+  }
+  return targetEmail; // Ha nincs szabadságon, marad az eredeti vezető
+}
+
+// ÚJ FÜGGVÉNY: A helyettes megörökli a szabadságon lévő vezető látható csoportjait
+async function getDelegatedGroupsForCurrentUser() {
+  if (!currentUserProfile || !currentUserProfile.email) return [];
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  const myEmail = cleanEmail(currentUserProfile.email);
+  
+  try {
+    // Megnézzük, kinek vagyok a helyettese éppen most
+    const { data: leaves } = await supabaseClient
+      .from('leave_requests')
+      .select('user_email')
+      .eq('helyettes_email', myEmail)
+      .eq('status', 'approved')
+      .lte('kezdo_datum', todayStr)
+      .gte('veg_datum', todayStr);
+      
+    if (!leaves || leaves.length === 0) return [];
+    
+    // Lekérjük az eredeti vezetők profiljait
+    const targetEmails = leaves.map(l => l.user_email);
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('csoport, display_csoport, latott_csoportok')
+      .in('email', targetEmails);
+      
+    const cleanStr = (s) => String(s || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\bcsapat\b/g, '').replace(/[\s\-_]+/g, '').trim();
+
+    let delegatedGroups = [];
+    (profiles || []).forEach(p => {
+       if (p.csoport) delegatedGroups.push(cleanStr(p.csoport));
+       if (p.display_csoport) delegatedGroups.push(cleanStr(p.display_csoport));
+       if (p.latott_csoportok) {
+         p.latott_csoportok.split(',').forEach(g => { if(g) delegatedGroups.push(cleanStr(g)); });
+       }
+    });
+    
+    return [...new Set(delegatedGroups)]; // Egyedi lista visszaadása
+  } catch (err) {
+    console.error("Delegált csoportok lekérési hibája:", err);
+    return [];
+  }
+}
+
+// ROBUSZTUS CSOPORT ELLENŐRZŐ ÉS DELEGÁLT JOGOK LEKEZELÉSE AZ ÓRANYILVÁNTARTÁSBAN
+function isGroupAllowedForLeader(targetGroup, userProf = null) {
+  const prof = userProf || window.currentUserProfile || (typeof currentUserProfile !== 'undefined' ? currentUserProfile : {});
+  
+  const cleanStr = (s) => String(s || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\bcsapat\b/g, '')
+    .replace(/[\s\-_]+/g, '')
+    .trim();
+
+  const userRole = cleanStr(prof.jogosultsag || prof.role);
+  const rawLatott = String(prof.latott_csoportok || prof.latott_csoport || '').trim();
+
+  // Admin és Boss mindent lát, ha nincs korlátozva latott_csoportok mezővel
+  if ((userRole.includes('admin') || userRole.includes('boss')) && (!rawLatott || rawLatott.toUpperCase() === 'NULL' || rawLatott.toUpperCase() === 'EMPTY')) {
+    return true;
+  }
+
+  const normTarget = cleanStr(targetGroup);
+  if (!normTarget) return false;
+
+  // 1. SAJÁT LÁTOTT CSOPORTOK ELLENŐRZÉSE
+  if (rawLatott && rawLatott.toUpperCase() !== 'NULL' && rawLatott.toUpperCase() !== 'EMPTY') {
+    const allowedList = rawLatott.split(',').map(s => cleanStr(s)).filter(Boolean);
+    if (allowedList.some(allowed => normTarget === allowed || normTarget.includes(allowed) || allowed.includes(normTarget))) {
+      return true;
+    }
+  }
+
+  // 2. HELYETTESÍTÉSBŐL ÖRÖKÖLT (DELEGÁLT) CSOPORTOK ELLENŐRZÉSE
+  if (window.delegatedGroups && window.delegatedGroups.length > 0) {
+    if (window.delegatedGroups.some(allowed => normTarget === allowed || normTarget.includes(allowed) || allowed.includes(normTarget))) {
+      return true;
+    }
+  }
+
+  // 3. TARTALÉK: SAJÁT CSOPORT
+  const ownGroup = cleanStr(prof.display_csoport || prof.csoport);
+  return ownGroup === normTarget;
 }
 
 </script>

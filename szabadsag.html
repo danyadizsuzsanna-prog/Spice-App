@@ -1134,7 +1134,7 @@
   <div class="card p-4 shadow-sm mb-4 border-top border-4 border-success">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 border-bottom pb-3 gap-2">
       <div>
-        <h5 class="text-dark fw-bold mb-1"><i class="bi bi-cash-coin text-success me-2"></i>Csapat Túlóra és Kifizetés Kezelő</h5>
+        <h5 class="text-dark fw-bold mb-1"><i class="bi bi-cash-coin text-success me-2"></i>Csapat Túlmunka és Kifizetés Kezelő</h5>
         <p class="text-muted small mb-0">Az órák automatikusan csúsztathatók. Felettesként itt kezdeményezheted az órák kifizetését.</p>
       </div>
       
@@ -1230,7 +1230,7 @@
             Csapat Túlmunka Büdzsék (Éves Keretek)
             <i class="bi bi-chevron-down ms-2 text-muted" style="font-size: 0.85rem;"></i>
           </h5>
-          <p class="text-muted small mb-0">Kattints ide a csapatonkénti éves túlóra keretek és felhasználás megjelenítéséhez.</p>
+          <p class="text-muted small mb-0">Kattints ide a csapatonkénti éves túlmunka keretek és felhasználás megjelenítéséhez.</p>
         </div>
       </div>
       <div class="d-flex align-items-center gap-2">
@@ -2202,6 +2202,11 @@ const cleanEmail = (str) => String(str || '').replace(/"/g, '').trim().toLowerCa
 
       currentUserProfile = profile;
 
+      // HELYETTESÍTÉSI DELEGÁLT JOGOK BETÖLTÉSE A TÁVOLLÉVŐ VEZETŐKTŐL
+      if (typeof getDelegatedGroupsForCurrentUser === 'function') {
+        window.delegatedGroups = await getDelegatedGroupsForCurrentUser();
+      }
+
       document.getElementById('uiNev').innerText = profile.nev || email;
       document.getElementById('uiEmail').innerText = profile.email || '-';
       document.getElementById('uiCsoport').innerText = profile.csoport || 'Munkatárs';
@@ -2732,8 +2737,12 @@ async function submitSpecialHORequest() {
       nextApprover = 'admin.oranyilvantartas@spicecommunication.hu';
       initialStatus = 'approved';
     } else {
-      // 3. Rendes szabadságok felettesi bírálati lánca
-      nextApprover = getNextApproverEmail(currentUserProfile);
+      // 3. Rendes szabadságok felettesi bírálati lánca (DELEGÁLÁS: dinamikus átirányítás a helyetteshez)
+      const baseApprover = getNextApproverEmail(currentUserProfile);
+      nextApprover = typeof getEffectiveApproverEmail === 'function' 
+        ? await getEffectiveApproverEmail(baseApprover) 
+        : baseApprover;
+
       initialStatus = (nextApprover === 'admin.oranyilvantartas@spicecommunication.hu') ? 'pending_admin' : 'pending_level1';
     }
 
@@ -2747,7 +2756,7 @@ async function submitSpecialHORequest() {
 
       if (error) throw error;
 
-      // Toast értesítés a HR Vezető pontos e-mail címével
+      // Toast értesítés a HR Vezető vagy a bíráló pontos e-mail címével
       if (isSpecialHR) {
         showToast(`Különleges HO kérelem továbbítva a HR Vezetőnek (<strong>${nextApprover}</strong>) elbírálásra!`, "info");
       } else if (autoApproved) {
@@ -2761,7 +2770,7 @@ async function submitSpecialHORequest() {
       
       if (typeof check15DayRule === "function") check15DayRule(); 
       
-      // E-mail értesítés kiküldése
+      // E-mail értesítés kiküldése (a tényleges bírálónak / helyettesnek)
       if (!autoApproved) {
         const subject = isSpecialHR 
           ? `⚠️ Különleges HO kérelem (HR) - ${reqData.nev}` 
@@ -2976,34 +2985,33 @@ async function submitSpecialHORequest() {
         sendAutomatedEmail(req.user_email, subject, bodyText, htmlBodyText);
 
       } else {
-        // Különleges HR kérelem (pending_hr), Admin/Boss bírálat, vagy már Level2-nél járó kérelem -> AZONNAL VÉGLEGESSÉ VÁLIK
-        if (req.status === 'pending_hr' || isAdmin || req.status === 'pending_admin') {
-          await supabaseClient.from('leave_requests').update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', id);
-          
-          const successMsg = req.status === 'pending_hr' 
-            ? "Különleges HO kérelem a HR által véglegesen jóváhagyva!" 
-            : "Kérelem véglegesen jóváhagyva!";
-          showToast(successMsg, "success");
+        // Egyfázisú felettesi jóváhagyás: Minden elfogadás azonnal véglegesíti a kérelmet (approved)
+        await supabaseClient.from('leave_requests').update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', id);
+        
+        const successMsg = req.status === 'pending_hr' 
+          ? "Különleges HO kérelem a HR által véglegesen jóváhagyva!" 
+          : "Kérelem véglegesen jóváhagyva!";
+        showToast(successMsg, "success");
 
-          const subject = "Szabadság kérelem jóváhagyva! 🎉";
-          const bodyText = `Szia!\n\nA(z) ${req.kezdo_datum} - ${req.veg_datum} közötti (${req.tipus}) kérelmedet jóváhagyták.`;
+        const subject = "Szabadság kérelem jóváhagyva! 🎉";
+        const bodyText = `Szia!\n\nA(z) ${req.kezdo_datum} - ${req.veg_datum} közötti (${req.tipus}) kérelmedet jóváhagyták.`;
 
-          const htmlBodyText = buildDecisionEmailHtml(req.nev, 'approved', req.tipus, req.kezdo_datum, req.veg_datum, '');
+        const htmlBodyText = buildDecisionEmailHtml(req.nev, 'approved', req.tipus, req.kezdo_datum, req.veg_datum, '');
 
-          sendAutomatedEmail(req.user_email, subject, bodyText, htmlBodyText);
+        sendAutomatedEmail(req.user_email, subject, bodyText, htmlBodyText);
 
-        } else if (req.status === 'pending_level1') {
-          // Első szintű felettesi jóváhagyás -> Továbbítás az Adminisztrátornak
-          await supabaseClient.from('leave_requests').update({ status: 'pending_admin', approver_email: 'admin.oranyilvantartas@spicecommunication.hu' }).eq('id', id);
-          showToast("Kérelem jóváhagyva! Továbbítva az Adminisztrátornak.", "success");
-
-          const adminEmail = 'admin.oranyilvantartas@spicecommunication.hu';
-          const subject = `Szabadság kérelem adminisztrátori bírálatra - ${req.nev}`;
-          const bodyText = `Szia!\n\n${req.nev} kérelmét a felettese jóváhagyta (${req.kezdo_datum} - ${req.veg_datum}). Adminisztrátori bírálat szükséges.`;
-
-          const htmlBodyText = buildNewRequestEmailHtml(req.nev, req.tipus, req.kezdo_datum, req.veg_datum, req.megjegyzes);
-
-          sendAutomatedEmail(adminEmail, subject, bodyText, htmlBodyText);
+        // HELYETTESÍTÉSI ÉRTESÍTŐ E-MAIL KIKÜLDÉSE (HA VAN KIJELÖLT HELYETTES)
+        if (req.helyettes_email && req.helyettes_email.trim() !== '') {
+          const subSubject = `Helyettesítési értesítő - ${req.nev} távolléte`;
+          const subBody = `Szia!\n\nTájékoztatunk, hogy ${req.nev} szabadságon lesz (${req.kezdo_datum} - ${req.veg_datum}), és téged jelölt meg helyettesének.\nEbben az időszakban az ő beosztottjainak kérelmei és bírálatai automatikusan hozzád fognak befutni a portálokon.\n\nJó munkát!`;
+          const subHtmlBody = `
+          <div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+              <h3 style="color: #0284c7; margin-top: 0; font-size: 16px;">Helyettesítési Értesítő 👥</h3>
+              <p style="font-size: 14px; color: #4a4a4a;">Tájékoztatunk, hogy <strong>${escapeHtml(req.nev)}</strong> szabadságon lesz a következő időszakban:</p>
+              <p style="font-size: 14px; background-color: #f0f9ff; padding: 10px; border-left: 4px solid #0284c7;"><strong>${req.kezdo_datum} - ${req.veg_datum}</strong></p>
+              <p style="font-size: 14px; color: #4a4a4a;">Erre az időszakra <strong>téged jelölt meg helyettesének</strong>. Ez azt jelenti, hogy a távolléte alatt a hozzá tartozó csapatok nyitási, szabadság és túlmunka kérelmei ideiglenesen <strong>automatikusan nálad fognak megjelenni</strong> elbírálásra.</p>
+          </div>`;
+          sendAutomatedEmail(req.helyettes_email, subSubject, subBody, subHtmlBody);
         }
       }
 
@@ -3118,30 +3126,29 @@ async function submitSpecialHORequest() {
   async function saveEditUser(event) {
     event.preventDefault();
     const btn = document.getElementById('saveEditUserBtn');
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
 
     const userId = document.getElementById('editUserId').value;
 
-    const belepettVal = document.getElementById('editUserBelepett').value;
-    const kilepettVal = document.getElementById('editUserKilepett').value;
+    const belepettVal = document.getElementById('editUserBelepett')?.value || '';
+    const kilepettVal = document.getElementById('editUserKilepett')?.value || '';
 
-    // saveEditUser-ben az updatedData objektum:
     const updatedData = {
       nev: document.getElementById('editUserName').value.trim(),
       jogosultsag: document.getElementById('editUserRole').value,
       csoport: document.getElementById('editUserGroup').value.trim(),
-      pozicio: document.getElementById('editUserPozicio').value.trim(),
-      munkaido_keret: Number(document.getElementById('editUserNapiLimit').value) || 8, // Supabase munkaido_keret oszlop!
-      eves_keret: Number(document.getElementById('editUserEvesKeret').value) || 0,
-      tavalyi_keret: Number(document.getElementById('editUserTavalyiKeret').value) || 0,
-      ho_keret: Number(document.getElementById('editUserHoKeret').value) || 0,
+      pozicio: document.getElementById('editUserPozicio')?.value.trim() || '',
+      munkaido_keret: Number(document.getElementById('editUserNapiLimit')?.value) || 8,
+      eves_keret: Number(document.getElementById('editUserEvesKeret')?.value) || 0,
+      tavalyi_keret: Number(document.getElementById('editUserTavalyiKeret')?.value) || 0,
+      ho_keret: Number(document.getElementById('editUserHoKeret')?.value) || 0,
       statusz: document.getElementById('editUserStatus').value,
-      belepett: (belepettVal && belepVal.trim() !== '') ? belepettVal : null,
-      kilepett: (kilepVal && kilepVal.trim() !== '') ? kilepVal : null,
-      csoportvezeto_email: document.getElementById('editUserCsvEmail').value.trim().toLowerCase(),
-      leader_email: document.getElementById('editUserLeaderEmail').value.trim().toLowerCase(),
-      manager_email: document.getElementById('editUserManagerEmail').value.trim().toLowerCase(),
-      boss_email: document.getElementById('editUserBossEmail').value.trim().toLowerCase()
+      belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
+      kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
+      csoportvezeto_email: document.getElementById('editUserCsvEmail')?.value.trim().toLowerCase() || '',
+      leader_email: document.getElementById('editUserLeaderEmail')?.value.trim().toLowerCase() || '',
+      manager_email: document.getElementById('editUserManagerEmail')?.value.trim().toLowerCase() || '',
+      boss_email: document.getElementById('editUserBossEmail')?.value.trim().toLowerCase() || ''
     };
 
     try {
@@ -3163,9 +3170,9 @@ async function submitSpecialHORequest() {
     } catch (err) {
       showToast("Hiba a mentés során: " + err.message, "danger");
     } finally {
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
     }
-  }
+}
 
   function filterAdminUsers() {
     const searchVal = (document.getElementById('adminUserSearch')?.value || '').toLowerCase().trim();
@@ -3200,26 +3207,27 @@ async function submitSpecialHORequest() {
     const btn = document.getElementById('saveNewUserBtn');
     if (btn) btn.disabled = true;
 
-    const belepettVal = document.getElementById('addUserBelepett').value;
-    const kilepettVal = document.getElementById('addUserKilepett').value;
+    const belepettVal = document.getElementById('addUserBelepett')?.value || '';
+    const kilepettVal = document.getElementById('addUserKilepett')?.value || '';
 
-    // saveEditUser-ben az updatedData objektum:
-    const updatedData = {
-      nev: document.getElementById('editUserName').value.trim(),
-      jogosultsag: document.getElementById('editUserRole').value,
-      csoport: document.getElementById('editUserGroup').value.trim(),
-      pozicio: document.getElementById('editUserPozicio').value.trim(),
-      munkaido_keret: Number(document.getElementById('editUserNapiLimit').value) || 8, // Supabase munkaido_keret oszlop!
-      eves_keret: Number(document.getElementById('editUserEvesKeret').value) || 0,
-      tavalyi_keret: Number(document.getElementById('editUserTavalyiKeret').value) || 0,
-      ho_keret: Number(document.getElementById('editUserHoKeret').value) || 0,
-      statusz: document.getElementById('editUserStatus').value,
-      belepett: (belepettVal && belepVal.trim() !== '') ? belepettVal : null,
-      kilepett: (kilepVal && kilepVal.trim() !== '') ? kilepVal : null,
-      csoportvezeto_email: document.getElementById('editUserCsvEmail').value.trim().toLowerCase(),
-      leader_email: document.getElementById('editUserLeaderEmail').value.trim().toLowerCase(),
-      manager_email: document.getElementById('editUserManagerEmail').value.trim().toLowerCase(),
-      boss_email: document.getElementById('editUserBossEmail').value.trim().toLowerCase()
+    // Helyes objektumnév (newUserData) és addUser... mezőazonosítók használata
+    const newUserData = {
+      nev: document.getElementById('addUserName').value.trim(),
+      email: document.getElementById('addUserEmail').value.trim().toLowerCase(),
+      jogosultsag: document.getElementById('addUserRole').value,
+      csoport: document.getElementById('addUserGroup').value.trim(),
+      pozicio: document.getElementById('addUserPozicio')?.value.trim() || '',
+      munkaido_keret: 8,
+      eves_keret: Number(document.getElementById('addUserEvesKeret').value) || 0,
+      tavalyi_keret: Number(document.getElementById('addUserTavalyiKeret').value) || 0,
+      ho_keret: Number(document.getElementById('addUserHoKeret').value) || 0,
+      statusz: document.getElementById('addUserStatus').value,
+      belepett: (belepettVal && belepettVal.trim() !== '') ? belepettVal : null,
+      kilepett: (kilepettVal && kilepettVal.trim() !== '') ? kilepettVal : null,
+      csoportvezeto_email: document.getElementById('addUserCsvEmail')?.value.trim().toLowerCase() || '',
+      leader_email: document.getElementById('addUserLeaderEmail')?.value.trim().toLowerCase() || '',
+      manager_email: document.getElementById('addUserManagerEmail')?.value.trim().toLowerCase() || '',
+      boss_email: document.getElementById('addUserBossEmail')?.value.trim().toLowerCase() || ''
     };
 
     try {
@@ -3242,7 +3250,7 @@ async function submitSpecialHORequest() {
     } finally {
       if (btn) btn.disabled = false;
     }
-  }
+}
 
   async function saveAdminSettings(event) {
     event.preventDefault();
@@ -3636,31 +3644,39 @@ function canSubmitPayoutFor(submitter, target) {
   const sEmail = normalizeStr(submitter.email);
   const tEmail = normalizeStr(target.email);
   
+  // Saját magának senki sem kérhet kifizetést
   if (sEmail === tEmail) return false;
 
   const sRole = normalizeStr(submitter.jogosultsag || submitter.role);
-  const sPos = normalizeStr(submitter.pozicio);
   const tRole = normalizeStr(target.jogosultsag || target.role);
 
-  const cleanSRole = sRole.includes('csoportvez') ? 'csoportvezeto'
-                  : sRole.includes('lead') ? 'leader'
-                  : sRole.includes('manag') ? 'manager'
-                  : sRole.includes('admin') ? 'admin'
-                  : sRole.includes('boss') ? 'boss'
-                  : (sRole.includes('hr') || sPos.includes('hr')) ? 'hr'
-                  : 'user';
+  // Szerepkörök egységesítése
+  const cleanRole = (r) => {
+    if (r.includes('admin')) return 'admin';
+    if (r.includes('boss')) return 'boss';
+    if (r.includes('manag') || r.includes('mgr')) return 'manager';
+    if (r.includes('lead')) return 'leader';
+    if (r.includes('csoportvez') || r.includes('csv')) return 'csoportvezeto';
+    return 'user';
+  };
 
-  const cleanTRole = tRole.includes('csoportvez') ? 'csoportvezeto'
-                  : tRole.includes('lead') ? 'leader'
-                  : tRole.includes('manag') ? 'manager'
-                  : 'user';
+  const sr = cleanRole(sRole);
+  const tr = cleanRole(tRole);
 
-  if (cleanSRole === 'admin') return true;
-  if (cleanSRole === 'boss') return cleanTRole === 'manager';
-  if (cleanSRole === 'hr') return cleanTRole === 'manager';
-  if (cleanSRole === 'manager') return cleanTRole === 'leader';
-  if (cleanSRole === 'leader') return ['csoportvezeto', 'user'].includes(cleanTRole);
-  if (cleanSRole === 'csoportvezeto') return cleanTRole === 'user';
+  // Admin bármikor bárkinek indíthat kifizetést (hibajavítás/korrekció céljából)
+  if (sr === 'admin') return true;
+
+  // 1. Managernek -> Csak Boss küldhet be
+  if (tr === 'manager') return sr === 'boss';
+
+  // 2. Leadernek -> Csak Manager küldhet be
+  if (tr === 'leader') return sr === 'manager';
+
+  // 3. Csoportvezetőnek -> Csak Leader küldhet be
+  if (tr === 'csoportvezeto') return sr === 'leader';
+
+  // 4. Usernek -> Csoportvezető vagy Leader küldhet be
+  if (tr === 'user') return sr === 'csoportvezeto' || sr === 'leader';
 
   return false;
 }
@@ -4115,23 +4131,32 @@ async function submitPayoutRequest(event) {
   }
 
   const targetEmp = teamBalancesCache.find(e => normalizeStr(e.email) === normalizeStr(targetEmail));
-  const targetRole = targetEmp ? normalizeStr(targetEmp.jogosultsag || targetEmp.role) : 'user';
-  const targetPos = targetEmp ? normalizeStr(targetEmp.pozicio) : '';
+  const tRoleRaw = normalizeStr(targetEmp ? (targetEmp.jogosultsag || targetEmp.role) : 'user');
 
-  const submitterRole = normalizeStr(currentUserProfile.jogosultsag || currentUserProfile.role);
-  const submitterPos = normalizeStr(currentUserProfile.pozicio);
+  const cleanRole = (r) => {
+    if (r.includes('boss')) return 'boss';
+    if (r.includes('manag') || r.includes('mgr')) return 'manager';
+    if (r.includes('lead')) return 'leader';
+    if (r.includes('csoportvez') || r.includes('csv')) return 'csoportvezeto';
+    return 'user';
+  };
+
+  const targetRole = cleanRole(tRoleRaw);
 
   let targetStatus = 'pending_manager'; 
   let approvedAtStr = null;
-  
-  if (submitterRole.includes('boss') || submitterPos.includes('boss') || submitterPos.includes('vezerigazgato')) {
+
+  // JÓVÁHAGYÁSI MÁTRIX ALAPJÁN TÖRTÉNŐ STÁTUSZ BEÁLLÍTÁS:
+  if (targetRole === 'manager') {
+    // Managernek -> Boss küldi be -> Automatikusan jóváhagyva
     targetStatus = 'approved'; 
     approvedAtStr = new Date().toISOString();
-  } else if (targetRole.includes('manag') || targetPos.includes('manag')) {
-    targetStatus = 'pending_boss'; 
-  } else if (submitterRole.includes('manag')) {
-    targetStatus = 'approved';
-    approvedAtStr = new Date().toISOString();
+  } else if (targetRole === 'leader') {
+    // Leadernek -> Manager küldi be -> Pénzügyi Igazgató / HR Vezető bírálja el
+    targetStatus = 'pending_hr_fin'; 
+  } else {
+    // User / Csoportvezető -> Manager bírálja el
+    targetStatus = 'pending_manager';
   }
 
   try {
@@ -4222,21 +4247,21 @@ async function loadOvertimeApprovals() {
     const userRole = safeNorm(prof.jogosultsag || prof.role);
     const userPos = safeNorm(prof.pozicio);
 
-    const isAdmin = userRole.includes('admin');
-    const isHR = userRole.includes('hr') || userPos.includes('hr');
-    const isManager = userRole.includes('manager') || userRole.includes('mgr') || userRole.includes('leader') || userPos.includes('manager') || userPos.includes('vezeto');
-    const isBoss = userRole.includes('boss') || userPos.includes('boss');
+    const isAdmin = userRole.includes('admin') || userRole.includes('boss');
+    const isHRLeader = (userRole.includes('manager') || userRole.includes('mgr')) && (userPos.includes('hr') || userPos.includes('human'));
+    const isFinDirector = (userRole.includes('manager') || userRole.includes('mgr')) && (userPos.includes('penzugy') || userPos.includes('finan') || userPos.includes('pénzügy'));
+    const isManager = userRole.includes('manager') || userRole.includes('mgr');
 
     let query = supabaseClient.from('overtime_decisions').select('*');
 
     if (isAdmin) {
-      // Admin mindent lát
-    } else if (isBoss) {
-      query = query.in('status', ['pending_boss', 'pending', 'approved', 'challenged']);
-    } else if (isHR) {
-      query = query.in('status', ['pending_hr', 'pending', 'approved', 'challenged']);
+      // Admin és Boss mindent lát
+    } else if (isHRLeader || isFinDirector) {
+      // HR Vezető és Pénzügyi Igazgató látja a Leaderek kérelmeit (pending_hr_fin) ÉS a sima manageri kérelmeket
+      query = query.or('status.eq.pending_hr_fin,status.eq.pending_manager,status.eq.approved,status.eq.challenged');
     } else if (isManager) {
-      query = query.in('status', ['pending_manager', 'pending', 'approved', 'challenged']);
+      // Normál Manager látja a Userek és Csoportvezetők kérelmeit (pending_manager)
+      query = query.or('status.eq.pending_manager,status.eq.approved,status.eq.challenged');
     } else {
       tbody.innerHTML = `<tr><td colspan="9" class="text-muted py-4 text-center">Nincs jogosultságod a jóváhagyási kérelmek megtekintéséhez.</td></tr>`;
       return;
@@ -4248,15 +4273,16 @@ async function loadOvertimeApprovals() {
     // Kifizetés típusú kérelmek szűrése
     let filteredRequests = (requests || []).filter(r => {
       const t = safeNorm(r.tipus || r.kategoria || '');
-      const isPayout = !r.tipus || t.includes('kifizet') || t.includes('payout') || Number(r.osszeg || 0) > 0;
-      return isPayout;
+      return !r.tipus || t.includes('kifizet') || t.includes('payout') || Number(r.osszeg || 0) > 0;
     });
 
     // CSOPORT SZŰRÉS: A 'latott_csoportok' MEZŐ ALAPJÁN
-    if (isManager && !isHR && !isBoss && !isAdmin) {
+    if (!isAdmin) {
       filteredRequests = filteredRequests.filter(r => {
+        // A Leader kifizetéseket (pending_hr_fin) a HR Vezető és a Pénzügyi Igazgató cégszinten bírálhatja
+        if ((isHRLeader || isFinDirector) && r.status === 'pending_hr_fin') return true;
         const reqGroup = r.submitter_group || r.csoport || '';
-        return isGroupAllowedForLeader(reqGroup, prof);
+        return typeof isGroupAllowedForLeader === 'function' ? isGroupAllowedForLeader(reqGroup, prof) : true;
       });
     }
 
@@ -4559,12 +4585,20 @@ async function submitChallenge() {
   }
 
   function handleTypeChange() {
-    const tipus = document.getElementById('tipus')?.value;
+    const tipusVal = String(document.getElementById('tipus')?.value || '').toLowerCase();
     const timeContainer = document.getElementById('timeContainer');
     const vegDatumContainer = document.getElementById('vegDatumContainer');
     const alertEl = document.getElementById('compensatoryLimitAlert');
 
-    if (tipus === 'Csúsztatás') {
+    // Rugalmas ellenőrzés: elkapja az "Ügyfél (időponttal)", "Tréning", "Csúsztatás" opciókat is
+    const isHourly = tipusVal.includes('csúsztat') || 
+                     tipusVal.includes('csusztat') || 
+                     tipusVal.includes('ügyfél') || 
+                     tipusVal.includes('ugyfel') || 
+                     tipusVal.includes('tréning') || 
+                     tipusVal.includes('trening');
+
+    if (isHourly) {
       if (timeContainer) timeContainer.classList.remove('hidden');
       if (vegDatumContainer) vegDatumContainer.classList.add('hidden');
     } else {
@@ -4573,8 +4607,8 @@ async function submitChallenge() {
       if (alertEl) alertEl.classList.add('hidden');
     }
 
-    validateDates();
-  }
+    if (typeof validateDates === 'function') validateDates();
+}
 
   function validateDates() {
     const tipus = document.getElementById('tipus')?.value;
@@ -4904,6 +4938,7 @@ async function submitChallenge() {
         let haviTuloOrak = 0;
         let haviTuloOsszeg = 0;
         
+        // KIFIZETÉSEK SZŰRÉSE A KÉTLÉPCSŐS ELV ALAPJÁN
         const userPayouts = allPayouts.filter(po => {
           const poEmail = normalizeStr(po.user_email || po.email || po.munkatars_email);
           const poName = normalizeStr(po.nev || po.user_name);
@@ -4915,23 +4950,15 @@ async function submitChallenge() {
           
           const tipusClean = normalizeStr(po.tipus);
           const isPayout = tipusClean.includes('kifizetes') || tipusClean.includes('payout');
-          
-          const submissionDateStr = po.created_at || po.datum || po.approved_at;
-          const dateComp = extractYMD(submissionDateStr);
-          if (!dateComp) return false;
+          if (!isApproved || !isPayout) return false;
 
-          let targetYear = dateComp.y;
-          let targetMonth = dateComp.m;
+          const subDateStr = po.created_at || po.datum;
+          const appDateStr = po.approved_at || po.updated_at || subDateStr;
 
-          if (dateComp.d >= 26) {
-            targetMonth++;
-            if (targetMonth > 12) {
-              targetMonth = 1;
-              targetYear++;
-            }
-          }
+          const period = getPayrollPeriodForDate(subDateStr, appDateStr);
+          if (!period) return false;
 
-          return isApproved && isPayout && targetYear === year && targetMonth === month;
+          return period.y === year && period.m === month;
         });
         
         userPayouts.forEach(po => {
@@ -4992,7 +5019,7 @@ async function submitChallenge() {
       console.error("Bérfejtés hiba:", err);
       tbody.innerHTML = `<tr><td colspan="45" class="text-danger py-4 fw-bold">Hiba történt a generáláskor: ${err.message}</td></tr>`;
     }
-  }
+}
 
   function exportPayrollToCSV() {
     const monthVal = document.getElementById('payrollMonthFilter').value;
@@ -5063,22 +5090,54 @@ async function submitChallenge() {
     document.body.removeChild(link);
   }
 
-  function getPayrollPeriodForDate(dateStr) {
-    const comp = extractYMD(dateStr);
-    if (!comp) return null;
-    
-    let pYear = comp.y;
-    let pMonth = comp.m;
-    
-    if (comp.d >= 26) {
-      pMonth++;
-      if (pMonth > 12) {
-        pMonth = 1;
-        pYear++;
-      }
+  function getPayrollPeriodForDate(submittedAtStr, approvedAtStr) {
+  if (!submittedAtStr) return null;
+
+  const subDate = new Date(submittedAtStr);
+  if (isNaN(subDate.getTime())) return null;
+
+  // Ha nincs külön approved_at érték, a beküldési időt vesszük alapul
+  const appDate = approvedAtStr ? new Date(approvedAtStr) : subDate;
+  const validAppDate = isNaN(appDate.getTime()) ? subDate : appDate;
+
+  // 1. BEKÜLDÉSI HATÁRIDŐ ELLENŐRZÉSE: Tárgyhónap 25-e 23:59:59
+  let candYear = subDate.getFullYear();
+  let candMonth = subDate.getMonth() + 1; // 1-12
+
+  const subDay = subDate.getDate();
+  const subHours = subDate.getHours();
+  const subMins = subDate.getMinutes();
+
+  // Ha a beküldés 25-e 23:59 után történt, átcsúszik a következő hónap bérfejtésébe
+  if (subDay > 25 || (subDay === 25 && (subHours > 23 || (subHours === 23 && subMins > 59)))) {
+    candMonth++;
+    if (candMonth > 12) {
+      candMonth = 1;
+      candYear++;
     }
-    return { y: pYear, m: pMonth };
   }
+
+  // 2. JÓVÁHAGYÁSI HATÁRIDŐ ELLENŐRZÉSE: A célhónap utolsó előtti napja 23:59:59
+  while (true) {
+    const lastDayObj = new Date(candYear, candMonth, 0); 
+    const penultimateDay = lastDayObj.getDate() - 1; // Utolsó előtti nap (pl. 30 naposnál 29, 31 naposnál 30)
+    const approvalCutoff = new Date(candYear, candMonth - 1, penultimateDay, 23, 59, 59, 999);
+
+    // Ha a jóváhagyás megtörtént a célhónap utolsó előtti napjáig
+    if (validAppDate <= approvalCutoff) {
+      break;
+    }
+
+    // Ha a jóváhagyás csúszott, átkerül a következő hónapra
+    candMonth++;
+    if (candMonth > 12) {
+      candMonth = 1;
+      candYear++;
+    }
+  }
+
+  return { y: candYear, m: candMonth };
+}
 
   function setAppActive(element) {
     document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
@@ -5705,7 +5764,7 @@ async function updateTeamBudgetWidget(selectedGroup = 'ALL') {
             <i class="bi bi-wallet2 fs-4"></i>
           </div>
           <div>
-            <span class="text-muted small fw-bold d-block">💰 Csapat Túlóra Keret (${groupTitle})</span>
+            <span class="text-muted small fw-bold d-block">💰 Csapat Túlmunka Keret (${groupTitle})</span>
             <span class="fs-5 fw-bold text-dark">${totalBudget.toLocaleString('hu-HU')} Ft</span>
           </div>
         </div>
@@ -5896,7 +5955,7 @@ function filterOvertimeProfilesByGroup(profilesList, selectedGroup) {
   });
 }
 
-// ROBUSZTUS, SZÓKÖZ- ÉS KÖTŐJEL-FÜGGETLEN CSOPORT ELLENŐRZŐ
+// ROBUSZTUS, SZÓKÖZ- ÉS KÖTŐJEL-FÜGGETLEN CSOPORT ELLENŐRZŐ (BŐVÍTVE DELEGÁLÁSSAL)
 function isGroupAllowedForLeader(targetGroup, userProf = null) {
   const prof = userProf || window.currentUserProfile || (typeof currentUserProfile !== 'undefined' ? currentUserProfile : {});
   
@@ -5923,7 +5982,16 @@ function isGroupAllowedForLeader(targetGroup, userProf = null) {
   // Ha ki van töltve a latott_csoportok mező, KIZÁRÓLAG az abban lévő csoportokat engedélyezi
   if (rawLatott && rawLatott.toUpperCase() !== 'NULL' && rawLatott.toUpperCase() !== 'EMPTY') {
     const allowedList = rawLatott.split(',').map(s => cleanStr(s)).filter(Boolean);
-    return allowedList.some(allowed => normTarget === allowed || normTarget.includes(allowed) || allowed.includes(normTarget));
+    if (allowedList.some(allowed => normTarget === allowed || normTarget.includes(allowed) || allowed.includes(normTarget))) {
+      return true;
+    }
+  }
+
+  // DELEGÁLT (ÖRÖKÖLT) CSOPORTOK ELLENŐRZÉSE A HELYETTESÍTÉS MIATT
+  if (window.delegatedGroups && window.delegatedGroups.length > 0) {
+    if (window.delegatedGroups.some(allowed => normTarget === allowed || normTarget.includes(allowed) || allowed.includes(normTarget))) {
+        return true;
+    }
   }
 
   // Tartalék: saját csoport
@@ -6008,6 +6076,77 @@ async function getHRManagerEmail() {
   } catch (e) {
     console.error("Hiba a HR Vezető keresésekor:", e);
     return 'admin.oranyilvantartas@spicecommunication.hu';
+  }
+}
+
+// ÚJ FÜGGVÉNY: Megkeresi, hogy a célzott vezető épp szabadságon van-e, és ki a helyettese
+async function getEffectiveApproverEmail(targetEmail) {
+  if (!targetEmail || targetEmail === 'admin.oranyilvantartas@spicecommunication.hu') return targetEmail;
+
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabaseClient
+      .from('leave_requests')
+      .select('helyettes_email')
+      .eq('user_email', targetEmail)
+      .eq('status', 'approved')
+      .lte('kezdo_datum', todayStr)
+      .gte('veg_datum', todayStr)
+      .not('helyettes_email', 'is', null)
+      .neq('helyettes_email', '');
+
+    if (!error && data && data.length > 0) {
+      console.log(`[Delegálás] ${targetEmail} szabadságon van. Aktív helyettes: ${data[0].helyettes_email}`);
+      return data[0].helyettes_email;
+    }
+  } catch (err) {
+    console.error("Hiba a helyettes keresésekor:", err);
+  }
+  return targetEmail; // Ha nincs szabadságon, marad az eredeti vezető
+}
+
+// ÚJ FÜGGVÉNY: A helyettes megörökli a szabadságon lévő vezető látható csoportjait
+async function getDelegatedGroupsForCurrentUser() {
+  if (!currentUserProfile || !currentUserProfile.email) return [];
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  const myEmail = cleanEmail(currentUserProfile.email);
+  
+  try {
+    // Megnézzük, kinek vagyok a helyettese éppen most
+    const { data: leaves } = await supabaseClient
+      .from('leave_requests')
+      .select('user_email')
+      .eq('helyettes_email', myEmail)
+      .eq('status', 'approved')
+      .lte('kezdo_datum', todayStr)
+      .gte('veg_datum', todayStr);
+      
+    if (!leaves || leaves.length === 0) return [];
+    
+    // Lekérjük az eredeti vezetők profiljait
+    const targetEmails = leaves.map(l => l.user_email);
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('csoport, display_csoport, latott_csoportok')
+      .in('email', targetEmails);
+      
+    const cleanStr = (s) => String(s || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\bcsapat\b/g, '').replace(/[\s\-_]+/g, '').trim();
+
+    let delegatedGroups = [];
+    (profiles || []).forEach(p => {
+       if (p.csoport) delegatedGroups.push(cleanStr(p.csoport));
+       if (p.display_csoport) delegatedGroups.push(cleanStr(p.display_csoport));
+       if (p.latott_csoportok) {
+         p.latott_csoportok.split(',').forEach(g => { if(g) delegatedGroups.push(cleanStr(g)); });
+       }
+    });
+    
+    return [...new Set(delegatedGroups)]; // Egyedi lista visszaadása
+  } catch (err) {
+    console.error("Delegált csoportok lekérési hibája:", err);
+    return [];
   }
 }
 
