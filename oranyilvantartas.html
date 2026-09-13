@@ -723,9 +723,15 @@
               <label class="form-label small fw-bold text-secondary mb-1">
                 <i class="bi bi-hash me-1"></i>Munkaszám szűrő
               </label>
-              <select class="form-select form-select-sm border-primary" id="tsCreJob" onchange="loadTsCreativeData()">
-                <option value="ALL">🌐 Összes munkaszám</option>
-              </select>
+              <!-- Kereshető input mező + autokomplett lista -->
+              <input type="text" 
+                    class="form-control form-control-sm border-primary" 
+                    id="tsCreJob" 
+                    list="tsCreJobList" 
+                    placeholder="🌐 Összes (vagy gépelj munkaszámot...)" 
+                    oninput="loadTsCreativeData()" 
+                    autocomplete="off">
+              <datalist id="tsCreJobList"></datalist>
             </div>
           </div>
         </div>
@@ -3968,13 +3974,27 @@ let currentCreativeReqId = 0;
 
 async function onTsCreGroupChange() {
   const groupCode = document.getElementById('tsCreGroup') ? document.getElementById('tsCreGroup').value : 'ALL';
-  const jobSelect = document.getElementById('tsCreJob');
+  const jobInput = document.getElementById('tsCreJob');
+  const jobDatalist = document.getElementById('tsCreJobList');
 
-  if (!jobSelect) return;
-
-  // 1. Összes projekt betöltése a szűréshez (lezártakat is beleértve a korábbi órákhoz)
+  // 1. Összes projekt betöltése PAGINÁLVA
   if (!window.allProjectsForStats || window.allProjectsForStats.length === 0) {
-    const { data: allProjData } = await supabaseClient.from('projects').select('*');
+    let allProjData = [];
+    let pFrom = 0;
+    const step = 1000;
+
+    while (true) {
+      const { data: pChunk, error: pErr } = await supabaseClient
+        .from('projects')
+        .select('*')
+        .range(pFrom, pFrom + step - 1);
+
+      if (pErr) break;
+      if (pChunk && pChunk.length > 0) allProjData.push(...pChunk);
+      if (!pChunk || pChunk.length < step) break;
+      pFrom += step;
+    }
+
     window.allProjectsForStats = (allProjData || []).map(p => ({
       id: String(p.munkaszam || p.kod || '').trim(),
       vevo: p.vevo || "N/A",
@@ -3994,11 +4014,22 @@ async function onTsCreGroupChange() {
     matchingProjects = matchingProjects.filter(p => normalizeGroupCode(p.csoportkod) === normGroup);
   }
 
-  matchingProjects.sort((a, b) => a.id.localeCompare(b.id, 'hu'));
+  // CSÖKKENŐ RENDEZÉS MUNKASZÁM ALAPJÁN (a nagyobb/újabb számok kerülnek előre)
+  matchingProjects.sort((a, b) => b.id.localeCompare(a.id, 'hu', { numeric: true }));
 
   const escapeFn = typeof escapeHtml === 'function' ? escapeHtml : t => t || '';
-  jobSelect.innerHTML = '<option value="ALL">🌐 Összes munkaszám</option>' + 
-    matchingProjects.map(p => `<option value="${escapeFn(p.id)}">${escapeFn(p.id)} - ${escapeFn(p.vevo || '')} | ${escapeFn(p.munka || '')}</option>`).join('');
+
+  // 2. Kereshető DATALIST feltöltése csökkenő sorrendben
+  if (jobDatalist) {
+    jobDatalist.innerHTML = matchingProjects.map(p => 
+      `<option value="${escapeFn(p.id)}">${escapeFn(p.id)} - ${escapeFn(p.vevo || '')} | ${escapeFn(p.munka || '')}</option>`
+    ).join('');
+  }
+
+  if (jobInput && jobInput.tagName === 'SELECT') {
+    jobInput.innerHTML = '<option value="ALL">🌐 Összes munkaszám</option>' + 
+      matchingProjects.map(p => `<option value="${escapeFn(p.id)}">${escapeFn(p.id)} - ${escapeFn(p.vevo || '')} | ${escapeFn(p.munka || '')}</option>`).join('');
+  }
 
   await loadTsCreativeData();
 }
@@ -4261,7 +4292,10 @@ async function loadTsCreativeData() {
 
   const month = monthEl ? monthEl.value : '';
   const groupCode = groupEl ? groupEl.value : '';
-  const selectedJob = jobEl ? jobEl.value : 'ALL';
+  const rawJobVal = jobEl ? jobEl.value.trim() : '';
+
+  // Szabad szöveges és datalist alapú megadás támogatása ("ALL" vagy üres esetén mindent mutat)
+  const selectedJob = (!rawJobVal || rawJobVal.toUpperCase() === 'ALL') ? 'ALL' : rawJobVal;
 
   if (!month || !groupCode) {
     resContainer.innerHTML = '<div class="alert alert-light py-2">Kérlek, válassz hónapot és csoportkódot!</div>';
@@ -4274,8 +4308,24 @@ async function loadTsCreativeData() {
   resContainer.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm me-2"></div>Adatok lekérése...</div>';
 
   try {
+    // 1. ÖSSZES PROJEKT BETÖLTÉSE PAGINÁLVA (Supabase 1000 soros korlát feloldása)
     if (!window.allProjectsForStats || window.allProjectsForStats.length === 0) {
-      const { data: allProjData } = await supabaseClient.from('projects').select('*');
+      let allProjData = [];
+      let pFrom = 0;
+      const step = 1000;
+
+      while (true) {
+        const { data: pChunk, error: pErr } = await supabaseClient
+          .from('projects')
+          .select('*')
+          .range(pFrom, pFrom + step - 1);
+
+        if (pErr) break;
+        if (pChunk && pChunk.length > 0) allProjData.push(...pChunk);
+        if (!pChunk || pChunk.length < step) break;
+        pFrom += step;
+      }
+
       window.allProjectsForStats = (allProjData || []).map(p => ({
         id: String(p.munkaszam || p.kod || '').trim(),
         vevo: p.vevo || "N/A",
@@ -4293,7 +4343,7 @@ async function loadTsCreativeData() {
       window.tsProfilesData = profData || [];
     }
 
-    // 1. KIZÁRÓLAG "Kreatív - copy" ÉS "Kreatív - grafikus" CSOPORTBA TARTOZÓ PROFILOK KISZŰRÉSE
+    // 2. KIZÁRÓLAG "Kreatív - copy" ÉS "Kreatív - grafikus" CSOPORTBA TARTOZÓ PROFILOK KISZŰRÉSE
     const creativeProfiles = (window.tsProfilesData || []).filter(p => {
       const cs = typeof normalizeStr === 'function' ? normalizeStr(p.csoport || '') : String(p.csoport || '').toLowerCase();
       return cs.includes('kreativ') && (cs.includes('copy') || cs.includes('grafik'));
@@ -4308,7 +4358,7 @@ async function loadTsCreativeData() {
       }
     });
 
-    // 2. Munkalapok lekérése a hónapra
+    // 3. Munkalapok lekérése a hónapra (paginálva)
     const [yr, mo] = month.split('-');
     const lastDay = new Date(parseInt(yr, 10), parseInt(mo, 10), 0).getDate();
     const startDateStr = `${month}-01`;
@@ -4351,7 +4401,7 @@ async function loadTsCreativeData() {
 
     if (reqId !== window.currentCreativeReqId) return;
 
-    // 3. Csoportkód és Munkaszám szűrése
+    // 4. Csoportkód és Munkaszám szűrése (kereshető/részleges egyezéssel)
     const normSelectedGroup = typeof normalizeGroupCode === 'function' ? normalizeGroupCode(groupCode) : groupCode.toUpperCase();
 
     let matchingProjects = masterList;
@@ -4366,7 +4416,7 @@ async function loadTsCreativeData() {
       matchingProjects = matchingProjects.filter(p => {
         const pIdClean = typeof cleanJobId === 'function' ? cleanJobId(p.id) : String(p.id).toLowerCase().replace(/[^a-z0-9]/g, '');
         const selClean = typeof cleanJobId === 'function' ? cleanJobId(selectedJob) : String(selectedJob).toLowerCase().replace(/[^a-z0-9]/g, '');
-        return pIdClean === selClean || pIdClean.startsWith(selClean) || selClean.startsWith(pIdClean);
+        return pIdClean.includes(selClean) || selClean.includes(pIdClean);
       });
     }
 
@@ -4375,8 +4425,6 @@ async function loadTsCreativeData() {
     );
 
     const isJobMatch = (log) => {
-      if (normSelectedGroup === 'ALL' && selectedJob === 'ALL') return true;
-
       const logJobRaw = String(log.munkaszam || '').trim();
       if (!logJobRaw) return false;
 
@@ -4384,13 +4432,13 @@ async function loadTsCreativeData() {
 
       if (selectedJob !== 'ALL') {
         const selClean = typeof cleanJobId === 'function' ? cleanJobId(selectedJob) : String(selectedJob).toLowerCase().replace(/[^a-z0-9]/g, '');
-        return logJobClean === selClean || logJobClean.startsWith(selClean) || selClean.startsWith(logJobClean);
+        return logJobClean.includes(selClean) || selClean.includes(logJobClean);
       }
 
       if (matchingJobCleanIds.has(logJobClean)) return true;
 
       for (const projCleanId of matchingJobCleanIds) {
-        if (projCleanId && (logJobClean.startsWith(projCleanId) || projCleanId.startsWith(logJobClean))) {
+        if (projCleanId && (logJobClean.includes(projCleanId) || projCleanId.includes(logJobClean))) {
           return true;
         }
       }
@@ -4401,7 +4449,7 @@ async function loadTsCreativeData() {
       return false;
     };
 
-    // 4. MUNKATÁRSAK SZŰRÉSE: CSAK A KREATÍV COPY / GRAFIKUS NEVEK
+    // 5. MUNKATÁRSAK SZŰRÉSE: CSAK A KREATÍV COPY / GRAFIKUS NEVEK
     const creativeLogs = allLogs.filter(log => {
       if (!isJobMatch(log)) return false;
 
@@ -4429,7 +4477,7 @@ async function loadTsCreativeData() {
       return;
     }
 
-    // 5. Csoportosítás és megjelenítés
+    // 6. Csoportosítás és megjelenítés
     const userMap = {};
     creativeLogs.forEach(log => {
       const name = log.nev || 'Ismeretlen munkatárs';
